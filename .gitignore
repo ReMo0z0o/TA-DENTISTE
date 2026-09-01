@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+tests/sorties/
+
+# fichiers réels de la mission : jamais versionnés (données de praticiens)
+tests/fixtures/liste.xlsx
+tests/fixtures/modele.xlsx
+tests/fixtures/out-*.xlsx
