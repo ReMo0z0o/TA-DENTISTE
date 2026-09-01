@@ -23,7 +23,7 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
   const dernierControle = controles[controles.length - 1];
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:pb-0">
       <Block title="Rappels avec le profil « intervention majorée »">
         <p className="mb-3 text-[13px] text-slate-600">
           Le scénario demande de rappeler le lendemain, avec une voix d'homme et l'autre profil, les cabinets qui ont
@@ -54,7 +54,7 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
                   </a>
                 )}
               </div>
-              <div className="mt-3 grid gap-x-3 sm:grid-cols-2">
+              <div className="mt-3 grid gap-x-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 <Field
                   label="Date du rappel"
                   type="date"
@@ -105,6 +105,7 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
         )}
       </Block>
 
+      <div className="lg:contents">
       <Block title="Rendez-vous à annuler">
         <p className="mb-3 text-[13px] text-slate-600">
           À annuler seulement <strong>après 4 jours ouvrables</strong> : Test-Achats veut voir si le cabinet annule de
@@ -170,6 +171,7 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
           J'ai vérifié aujourd'hui
         </Bouton>
       </Block>
+      </div>
     </div>
   );
 }

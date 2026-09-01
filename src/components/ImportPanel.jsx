@@ -1,7 +1,7 @@
 // Chargement d'une liste d'appel : fichier .xlsx / .csv ou simple collage.
 // Les colonnes sont reconnues toutes seules, et restent corrigeables à la main.
 import { useMemo, useState } from "react";
-import { Block, Bouton, Label, Puce, Select } from "./ui.jsx";
+import { Block, Bouton, Label, Puce, Select, Tiroir, ZoneFichier } from "./ui.jsx";
 import {
   CHAMPS_LISTE,
   callsDepuisReponses,
@@ -44,9 +44,7 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
     setContexte(contexteDepuisNom(nom, lignes));
   };
 
-  const surFichier = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = "";
+  const surFichier = async (file) => {
     if (!file) return;
     try {
       const lu = await lireFichier(file);
@@ -127,15 +125,12 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
           « Dentistes_Hainaut_liste_appels.xlsx »), ou des lignes copiées depuis Excel. Province, nom et téléphone
           seront ensuite déjà remplis à chaque appel.
         </p>
-        <label className="mb-3 block">
-          <span className="text-[13px] text-slate-600">Fichier .xlsx, .csv ou sauvegarde .json</span>
-          <input
-            type="file"
-            accept=".xlsx,.xlsm,.csv,.tsv,.txt,.json,application/json,text/csv,text/plain"
-            onChange={surFichier}
-            className="mt-1.5 block w-full text-[13px] text-slate-700 file:mr-3 file:min-h-[40px] file:rounded-lg file:border-0 file:bg-teal-800 file:px-3 file:py-2 file:text-[13px] file:text-white"
-          />
-        </label>
+        <ZoneFichier
+          accept=".xlsx,.xlsm,.csv,.tsv,.txt,.json,application/json,text/csv,text/plain"
+          onFichier={surFichier}
+          libelle="Choisir un fichier"
+          aide="Liste .xlsx ou .csv, ou sauvegarde .json"
+        />
         <Label hint="Colle ici des lignes copiées depuis Excel, ou un code de reprise .json.">Ou coller</Label>
         <textarea
           rows={3}
@@ -149,9 +144,10 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
         </Bouton>
       </Block>
 
-      {source && (
-        <Block title="Vérifier avant d'importer">
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-slate-600">
+      <Tiroir ouvert={Boolean(source)} onClose={() => setSource(null)} titre="Vérifier avant d'importer">
+        {source && (
+          <div>
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-slate-600">
             <Puce tone="teal">{source.nom}</Puce>
             <span>
               {nbBrutes} ligne{nbBrutes > 1 ? "s" : ""} lue{nbBrutes > 1 ? "s" : ""} · {nbColonnes} colonnes
@@ -242,18 +238,19 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
             </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <Bouton onClick={importer} className="flex-1">
-              {genre === "reponses"
-                ? `Importer ${nbLignes} appel${nbLignes > 1 ? "s" : ""}`
-                : `Importer ${nbLignes} praticien${nbLignes > 1 ? "s" : ""}`}
-            </Bouton>
-            <Bouton variant="ghost" onClick={() => setSource(null)}>
-              Annuler
-            </Bouton>
+            <div className="flex flex-wrap gap-2">
+              <Bouton onClick={importer} className="flex-1">
+                {genre === "reponses"
+                  ? `Importer ${nbLignes} appel${nbLignes > 1 ? "s" : ""}`
+                  : `Importer ${nbLignes} praticien${nbLignes > 1 ? "s" : ""}`}
+              </Bouton>
+              <Bouton variant="ghost" onClick={() => setSource(null)}>
+                Annuler
+              </Bouton>
+            </div>
           </div>
-        </Block>
-      )}
+        )}
+      </Tiroir>
     </>
   );
 }

@@ -1,7 +1,7 @@
 // Tout ce qui entre et tout ce qui sort : listes d'appel, fichier Excel de
 // réponses, sauvegarde pour passer du bureau au téléphone.
 import { useState } from "react";
-import { Block, Bouton, Case, Field, Vide } from "../components/ui.jsx";
+import { Block, Bouton, Case, Field, Vide, ZoneFichier } from "../components/ui.jsx";
 import ImportPanel from "../components/ImportPanel.jsx";
 import {
   classeurNeuf,
@@ -76,9 +76,7 @@ export default function DonneesScreen({
   const [remplissage, setRemplissage] = useState(false);
   const vide = calls.length === 0;
 
-  const chargeModele = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = "";
+  const chargeModele = async (file) => {
     if (!file) return;
     try {
       const buffer = await file.arrayBuffer();
@@ -119,24 +117,27 @@ export default function DonneesScreen({
   };
 
   return (
-    <div className="pb-24">
-      <ImportPanel onProspects={onProspects} onCalls={onCalls} onSauvegarde={onSauvegarde} flash={flash} />
+    <div className="pb-24 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:pb-0">
+      {/* à gauche ce qui entre dans l'application, à droite ce qui en sort */}
+      <div>
+        <ImportPanel onProspects={onProspects} onCalls={onCalls} onSauvegarde={onSauvegarde} flash={flash} />
+        {vide && <Vide>Aucun appel encodé pour l'instant : les exports seront vides.</Vide>}
+      </div>
 
+      <div>
       <Block title="Remplir le fichier Excel de Test-Achats">
         <p className="mb-3 text-[13px] text-slate-600">
-          Charge ici le fichier <strong>Antwoordtabel</strong> que tu dois rendre : l'application y ajoute tes{" "}
-          {calls.length} appels en gardant les titres, les listes déroulantes et la mise en forme, puis te rend le
-          fichier complété.
+          Charge ici le fichier <strong>Antwoordtabel</strong> que tu dois rendre : l'application y ajoute
+          {calls.length ? ` tes ${calls.length} appel${calls.length > 1 ? "s" : ""}` : " tes appels"} en gardant les
+          titres, les listes déroulantes et la mise en forme, puis te rend le fichier complété.
         </p>
-        <label className="mb-3 block">
-          <span className="text-[13px] text-slate-600">Fichier Antwoordtabel…xlsx</span>
-          <input
-            type="file"
-            accept=".xlsx,.xlsm"
-            onChange={chargeModele}
-            className="mt-1.5 block w-full text-[13px] text-slate-700 file:mr-3 file:min-h-[40px] file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-2 file:text-[13px] file:text-slate-800"
-          />
-        </label>
+        <ZoneFichier
+          accept=".xlsx,.xlsm"
+          onFichier={chargeModele}
+          libelle={modele ? "Changer de fichier" : "Choisir le fichier Antwoordtabel"}
+          aide={modele ? modele.nom : "Fichier .xlsx fourni par Test-Achats"}
+          ton="ghost"
+        />
         {modele && (
           <>
             <Field
@@ -156,8 +157,8 @@ export default function DonneesScreen({
 
       <Block title="Coller directement dans Excel">
         <p className="mb-3 text-[13px] text-slate-600">
-          Le texte ci-dessous contient les {calls.length} appels dans l'ordre des 23 colonnes. Copie-le, puis colle-le
-          dans la première cellule vide de la colonne A : Excel répartit les colonnes tout seul.
+          Le texte ci-dessous contient {calls.length} appel{calls.length > 1 ? "s" : ""} dans l'ordre des 23 colonnes.
+          Copie-le, puis colle-le dans la première cellule vide de la colonne A : Excel répartit les colonnes tout seul.
         </p>
         <Case checked={avecEnTete} onChange={setAvecEnTete}>
           Inclure la ligne de titres
@@ -175,7 +176,7 @@ export default function DonneesScreen({
       </Block>
 
       <Block title="Autres fichiers">
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Bouton
             variant="ghost"
             disabled={vide}
@@ -238,7 +239,7 @@ export default function DonneesScreen({
         </div>
       </Block>
 
-      {vide && <Vide>Aucun appel encodé pour l'instant : les exports seront vides.</Vide>}
+      </div>
     </div>
   );
 }

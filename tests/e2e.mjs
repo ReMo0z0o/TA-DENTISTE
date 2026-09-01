@@ -58,7 +58,8 @@ page.on("console", (m) => {
 });
 
 await page.goto(`http://localhost:${PORT}/`);
-await page.waitForSelector("h1");
+// deux en-têtes coexistent (barre latérale au bureau, bandeau sur téléphone)
+await page.waitForSelector("header h1");
 
 console.log(`\nJeu de fichiers : ${jeu.nom}`);
 console.log("\n1. Import de la liste d'appel (.xlsx)");
@@ -69,7 +70,7 @@ verifie(`${A.praticiens} praticiens détectés`, apercu.includes(`Importer ${A.p
 const colonnes = await page.$$eval("thead select", (els) => els.map((e) => e.value));
 verifie("colonnes reconnues", colonnes.includes("nom") && colonnes.includes("telephone"), colonnes.join(","));
 await page.click(`button:has-text("Importer ${A.praticiens} praticien")`);
-await page.waitForSelector(`text=0 / ${A.praticiens} appelés`);
+await page.waitForSelector(`button:has-text("Tous ${A.praticiens}")`);
 verifie("liste chargée", true);
 
 console.log("\n2. Premier appel pré-rempli");
@@ -97,14 +98,15 @@ await page.waitForSelector("text=/Au suivant/");
 verifie("appel enregistré et fiche suivante ouverte", true);
 
 console.log("\n4. Historique avec l'heure");
-await page.click("nav >> text=Journée");
-await page.waitForSelector(`text=${A.premierNom}`);
-const carte = await page.textContent(`li:has-text("${A.premierNom}")`);
+await page.click("nav:visible >> text=Journée");
+// la journée se lit en cartes sur téléphone, en tableau au bureau
+await page.waitForSelector(`li:has-text("${A.premierNom}"):visible`);
+const carte = await page.textContent(`li:has-text("${A.premierNom}"):visible`);
 verifie("heure visible dans l'historique", new RegExp(heure).test(carte), carte.slice(0, 120));
 verifie("résumé du rendez-vous", carte.includes("12/11/2026"), carte.slice(0, 160));
 
 console.log("\n5. Remplissage du fichier Excel officiel");
-await page.click("nav >> text=Données");
+await page.click("nav:visible >> text=Données");
 await page.waitForSelector("text=Remplir le fichier Excel de Test-Achats");
 await page.setInputFiles('input[accept=".xlsx,.xlsm"]', jeu.modele);
 await page.waitForSelector("text=/première ligne libre/");
@@ -143,7 +145,7 @@ const page2 = await autreAppareil.newPage();
 page2.on("pageerror", (e) => erreurs.push(String(e)));
 page2.on("dialog", (d) => d.accept());
 await page2.goto(`http://localhost:${PORT}/`);
-await page2.waitForSelector("h1");
+await page2.waitForSelector("aside h1");
 await page2.setInputFiles('input[accept*=".json"]', fichierJson);
 await page2.waitForTimeout(600);
 const entete = await page2.textContent("header");
@@ -152,7 +154,7 @@ verifie("reprise sur un autre appareil", entete.includes("1 appel"), entete.repl
 console.log("\n7. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
-await page2.click("nav >> text=Liste");
+await page2.click("nav:visible >> text=Liste");
 await page2.waitForTimeout(300);
 await page2.screenshot({ path: path.join(SORTIES, "ecran-bureau.png") });
 await page.screenshot({ path: path.join(SORTIES, "ecran-liste.png") });

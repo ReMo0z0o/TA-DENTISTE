@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tiroir } from "./components/ui.jsx";
 import ScenarioSheet from "./components/ScenarioSheet.jsx";
+import RaccourcisSheet from "./components/RaccourcisSheet.jsx";
 import AppelScreen from "./screens/AppelScreen.jsx";
 import ListeScreen from "./screens/ListeScreen.jsx";
 import JourneeScreen from "./screens/JourneeScreen.jsx";
@@ -12,11 +13,11 @@ import { charge, enregistre, etatVide, nouvelId } from "./lib/storage.js";
 import { nowTime, today } from "./lib/dates.js";
 
 const ONGLETS = [
-  ["liste", "Liste"],
-  ["appel", "Appel"],
-  ["journee", "Journée"],
-  ["suivi", "Suivi"],
-  ["donnees", "Données"],
+  ["liste", "Liste", "Qui reste à appeler"],
+  ["appel", "Appel", "Encoder l'appel en cours"],
+  ["journee", "Journée", "Ce qui est déjà encodé"],
+  ["suivi", "Suivi", "Rappels et annulations"],
+  ["donnees", "Données", "Import, Excel, sauvegarde"],
 ];
 
 export default function App() {
@@ -26,8 +27,12 @@ export default function App() {
   const [onglet, setOnglet] = useState("liste");
   const [message, setMessage] = useState("");
   const [scenario, setScenario] = useState(false);
+  const [raccourcis, setRaccourcis] = useState(false);
   const [alerte, setAlerte] = useState("");
   const minuteur = useRef(null);
+  // les raccourcis clavier sont posés une fois, mais doivent appeler les
+  // fonctions du rendu courant
+  const actions = useRef({});
 
   useEffect(() => {
     const charge0 = charge();
@@ -47,6 +52,42 @@ export default function App() {
     }, 400);
     return () => clearTimeout(minuteur.current);
   }, [etat, call]);
+
+  useEffect(() => {
+    const auClavier = (e) => {
+      const cible = e.target;
+      const saisie =
+        cible instanceof HTMLElement &&
+        (cible.tagName === "INPUT" || cible.tagName === "TEXTAREA" || cible.tagName === "SELECT" || cible.isContentEditable);
+      const commande = e.ctrlKey || e.metaKey;
+
+      if (e.key === "Escape") {
+        setScenario(false);
+        setRaccourcis(false);
+        return;
+      }
+      if (commande && (e.key === "Enter" || e.key.toLowerCase() === "s")) {
+        e.preventDefault();
+        actions.current.enregistrer?.();
+        return;
+      }
+      if (e.altKey && /^[1-5]$/.test(e.key)) {
+        e.preventDefault();
+        setOnglet(ONGLETS[Number(e.key) - 1][0]);
+        return;
+      }
+      if (saisie || commande || e.altKey) return;
+      if (e.key === "?") {
+        e.preventDefault();
+        setRaccourcis(true);
+      } else if (e.key === "/") {
+        e.preventDefault();
+        document.dispatchEvent(new CustomEvent("focus-recherche"));
+      }
+    };
+    window.addEventListener("keydown", auClavier);
+    return () => window.removeEventListener("keydown", auClavier);
+  }, []);
 
   const flash = (texte) => {
     setMessage(texte);
@@ -99,8 +140,8 @@ export default function App() {
     window.scrollTo({ top: 0 });
   };
 
-  const prochaineFiche = (saufId) =>
-    etat.prospects.find((p) => p.etat === "a_appeler" && p.id !== saufId) || null;
+  const prochaines = etat.prospects.filter((p) => p.etat === "a_appeler");
+  const prochaineFiche = (saufId) => prochaines.find((p) => p.id !== saufId) || null;
 
   /** Enregistre l'appel en cours et renvoie l'appel enregistré. */
   const enregistreAppel = () => {
@@ -231,152 +272,240 @@ export default function App() {
     flash(remplacer ? "Sauvegarde chargée." : "Sauvegarde ajoutée à ce qui existait déjà.");
   };
 
+  actions.current = { enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null) };
+
   const enAttente = etat.calls.filter((c) => besoinRappel(c) && !c.rappelFait).length;
   const aAnnuler = etat.calls.filter((c) => rdvPris(c) && !c.annulation?.faiteLe).length;
+  const badges = { suivi: enAttente + aAnnuler };
+  const faits = etat.prospects.filter((p) => p.etat === "fait").length;
+  const pourcent = etat.prospects.length ? Math.round((faits / etat.prospects.length) * 100) : 0;
+
+  const ecran = (
+    <>
+      {onglet === "liste" && (
+        <ListeScreen
+          prospects={etat.prospects}
+          calls={etat.calls}
+          onEncoder={ouvreAppel}
+          onEtat={(id, valeur) =>
+            majEtat((e) => ({ prospects: e.prospects.map((p) => (p.id === id ? { ...p, etat: valeur } : p)) }))
+          }
+          onSupprimer={(id) => majEtat((e) => ({ prospects: e.prospects.filter((p) => p.id !== id) }))}
+          onImporter={() => setOnglet("donnees")}
+          onVider={() => {
+            if (window.confirm("Vider la liste d'appel ? Les appels déjà encodés sont conservés.")) {
+              majEtat({ prospects: [] });
+              flash("Liste d'appel vidée.");
+            }
+          }}
+          flash={flash}
+        />
+      )}
+
+      {onglet === "appel" && (
+        <AppelScreen
+          call={call}
+          set={set}
+          fiche={ficheLiee}
+          parent={parent}
+          doublon={doublon}
+          editing={editing}
+          onSave={enregistreEtSuivant}
+          onCancel={() => {
+            setEditing(null);
+            setCall(emptyCall({ dateAppel: today() }));
+          }}
+          onDentisteY={() => encodeDentisteY(null)}
+          afficherTout={etat.reglages.afficherTout}
+          setAfficherTout={(v) => majEtat((e) => ({ reglages: { ...e.reglages, afficherTout: v } }))}
+          fileAttente={prochaines}
+          onOuvrirFiche={ouvreAppel}
+        />
+      )}
+
+      {onglet === "journee" && (
+        <JourneeScreen
+          calls={etat.calls}
+          onEditer={editeAppel}
+          onSupprimer={supprimeAppel}
+          onDentisteY={encodeDentisteY}
+        />
+      )}
+
+      {onglet === "suivi" && (
+        <SuiviScreen
+          calls={etat.calls}
+          majAppel={majAppel}
+          controles={etat.suivi.controlesRegistre}
+          onControle={(date) =>
+            majEtat((e) => ({
+              suivi: { ...e.suivi, controlesRegistre: [...e.suivi.controlesRegistre, date] },
+            }))
+          }
+        />
+      )}
+
+      {onglet === "donnees" && (
+        <DonneesScreen
+          etat={etat}
+          calls={etat.calls}
+          onProspects={ajouteProspects}
+          onCalls={ajouteCalls}
+          onSauvegarde={chargeSauvegarde}
+          flash={flash}
+          onViderAppels={() => {
+            if (window.confirm("Vider les appels encodés ? À faire seulement après avoir rempli le fichier Excel.")) {
+              majEtat({ calls: [] });
+              setCall(emptyCall());
+              setEditing(null);
+              flash("Appels vidés.");
+            }
+          }}
+          onToutEffacer={() => {
+            if (window.confirm("Tout effacer : liste d'appel, appels et suivi. Cette action est définitive.")) {
+              setEtat(etatVide());
+              setCall(emptyCall());
+              setEditing(null);
+              flash("Application remise à zéro.");
+            }
+          }}
+        />
+      )}
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-2xl px-4 pt-4 pb-[76px]">
-        <header className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-[17px] leading-tight font-semibold text-teal-900">Appels dentistes</h1>
-            <p className="text-[12px] text-slate-500">
-              {etat.calls.length} appel{etat.calls.length > 1 ? "s" : ""} encodé{etat.calls.length > 1 ? "s" : ""}
-              {etat.prospects.length ? ` · ${etat.prospects.filter((p) => p.etat === "a_appeler").length} à appeler` : ""}
-            </p>
-          </div>
-          <button
-            onClick={() => setScenario(true)}
-            className="min-h-[40px] rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800"
-          >
-            Scénario
-          </button>
-        </header>
+      {/* barre latérale : sur ordinateur, la navigation reste visible en permanence */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-slate-200 bg-white lg:flex xl:w-64">
+        <div className="border-b border-slate-200 px-4 py-4">
+          <h1 className="text-[16px] leading-tight font-semibold text-teal-900">Appels dentistes</h1>
+          <p className="text-[11.5px] text-slate-500">Mystery shopping · Test-Achats</p>
+        </div>
 
-        {alerte && (
-          <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
-            {alerte}
-          </div>
-        )}
-        {message && <div className="mb-3 rounded-lg bg-teal-800 px-3 py-2 text-[13px] text-white">{message}</div>}
-
-        {onglet === "liste" && (
-          <ListeScreen
-            prospects={etat.prospects}
-            calls={etat.calls}
-            onEncoder={ouvreAppel}
-            onEtat={(id, valeur) =>
-              majEtat((e) => ({ prospects: e.prospects.map((p) => (p.id === id ? { ...p, etat: valeur } : p)) }))
-            }
-            onSupprimer={(id) => majEtat((e) => ({ prospects: e.prospects.filter((p) => p.id !== id) }))}
-            onImporter={() => setOnglet("donnees")}
-            onVider={() => {
-              if (window.confirm("Vider la liste d'appel ? Les appels déjà encodés sont conservés.")) {
-                majEtat({ prospects: [] });
-                flash("Liste d'appel vidée.");
-              }
-            }}
-          />
-        )}
-
-        {onglet === "appel" && (
-          <AppelScreen
-            call={call}
-            set={set}
-            fiche={ficheLiee}
-            parent={parent}
-            doublon={doublon}
-            editing={editing}
-            onSave={enregistreEtSuivant}
-            onCancel={() => {
-              setEditing(null);
-              setCall(emptyCall({ dateAppel: today() }));
-            }}
-            onDentisteY={() => encodeDentisteY(null)}
-            afficherTout={etat.reglages.afficherTout}
-            setAfficherTout={(v) => majEtat((e) => ({ reglages: { ...e.reglages, afficherTout: v } }))}
-          />
-        )}
-
-        {onglet === "journee" && (
-          <JourneeScreen
-            calls={etat.calls}
-            onEditer={editeAppel}
-            onSupprimer={supprimeAppel}
-            onDentisteY={encodeDentisteY}
-          />
-        )}
-
-        {onglet === "suivi" && (
-          <SuiviScreen
-            calls={etat.calls}
-            majAppel={majAppel}
-            controles={etat.suivi.controlesRegistre}
-            onControle={(date) =>
-              majEtat((e) => ({
-                suivi: { ...e.suivi, controlesRegistre: [...e.suivi.controlesRegistre, date] },
-              }))
-            }
-          />
-        )}
-
-        {onglet === "donnees" && (
-          <DonneesScreen
-            etat={etat}
-            calls={etat.calls}
-            onProspects={ajouteProspects}
-            onCalls={ajouteCalls}
-            onSauvegarde={chargeSauvegarde}
-            flash={flash}
-            onViderAppels={() => {
-              if (window.confirm("Vider les appels encodés ? À faire seulement après avoir rempli le fichier Excel.")) {
-                majEtat({ calls: [] });
-                setCall(emptyCall());
-                setEditing(null);
-                flash("Appels vidés.");
-              }
-            }}
-            onToutEffacer={() => {
-              if (window.confirm("Tout effacer : liste d'appel, appels et suivi. Cette action est définitive.")) {
-                setEtat(etatVide());
-                setCall(emptyCall());
-                setEditing(null);
-                flash("Application remise à zéro.");
-              }
-            }}
-          />
-        )}
-      </div>
-
-      <nav
-        className="fixed right-0 bottom-0 left-0 z-40 border-t border-slate-200 bg-white"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="mx-auto flex max-w-2xl">
-          {ONGLETS.map(([cle, libelle]) => {
-            const badge = cle === "suivi" ? enAttente + aAnnuler : 0;
+        <nav className="flex-1 overflow-y-auto p-2">
+          {ONGLETS.map(([cle, libelle, aide], i) => {
+            const actif = onglet === cle;
             return (
               <button
                 key={cle}
                 onClick={() => setOnglet(cle)}
                 className={
-                  "relative flex-1 py-3 text-[12px] font-medium " +
-                  (onglet === cle ? "text-teal-800" : "text-slate-500")
+                  "mb-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors " +
+                  (actif ? "bg-teal-800 text-white" : "text-slate-700 hover:bg-slate-100")
                 }
               >
-                {onglet === cle && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-800" />}
-                {libelle}
-                {badge > 0 && (
-                  <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{badge}</span>
+                <span className="flex-1">
+                  <span className="block text-[13.5px] font-medium">{libelle}</span>
+                  <span className={"block text-[11px] " + (actif ? "text-teal-100" : "text-slate-500")}>{aide}</span>
+                </span>
+                {badges[cle] > 0 && (
+                  <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-medium text-white">{badges[cle]}</span>
                 )}
+                <span className={"text-[10px] " + (actif ? "text-teal-200" : "text-slate-400")}>alt+{i + 1}</span>
               </button>
             );
           })}
+        </nav>
+
+        {etat.prospects.length > 0 && (
+          <div className="border-t border-slate-200 px-4 py-3">
+            <div className="flex items-baseline justify-between text-[12px]">
+              <span className="font-medium text-slate-700">
+                {faits} / {etat.prospects.length} appelés
+              </span>
+              <span className="text-slate-500">{prochaines.length} restants</span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${pourcent}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className="border-t border-slate-200 p-2">
+          <button
+            onClick={() => setScenario(true)}
+            className="mb-1 w-full rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800 hover:bg-teal-50"
+          >
+            Scénario de la mission
+          </button>
+          <button
+            onClick={() => setRaccourcis(true)}
+            className="w-full rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-100"
+          >
+            Raccourcis clavier <kbd className="font-sans text-slate-400">?</kbd>
+          </button>
+        </div>
+      </aside>
+
+      <div className="lg:pl-60 xl:pl-64">
+        <div className="mx-auto w-full max-w-2xl px-4 pt-4 pb-[76px] lg:max-w-[1180px] lg:px-6 lg:pt-6 lg:pb-10">
+          {/* en-tête compacte, remplacée par la barre latérale sur ordinateur */}
+          <header className="mb-3 flex items-center justify-between gap-3 lg:hidden">
+            <div>
+              <h1 className="text-[17px] leading-tight font-semibold text-teal-900">Appels dentistes</h1>
+              <p className="text-[12px] text-slate-500">
+                {etat.calls.length} appel{etat.calls.length > 1 ? "s" : ""} encodé{etat.calls.length > 1 ? "s" : ""}
+                {etat.prospects.length ? ` · ${prochaines.length} à appeler` : ""}
+              </p>
+            </div>
+            <button
+              onClick={() => setScenario(true)}
+              className="min-h-[40px] rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800"
+            >
+              Scénario
+            </button>
+          </header>
+
+          <div className="mb-3 hidden items-baseline justify-between lg:flex">
+            <h2 className="text-[19px] font-semibold text-slate-900">
+              {ONGLETS.find(([c]) => c === onglet)?.[1]}
+            </h2>
+            <p className="text-[12.5px] text-slate-500">
+              {etat.calls.length} appel{etat.calls.length > 1 ? "s" : ""} encodé{etat.calls.length > 1 ? "s" : ""}
+            </p>
+          </div>
+
+          {alerte && (
+            <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
+              {alerte}
+            </div>
+          )}
+          {message && <div className="mb-3 rounded-lg bg-teal-800 px-3 py-2 text-[13px] text-white">{message}</div>}
+
+          {ecran}
+        </div>
+      </div>
+
+      {/* navigation du bas : téléphone uniquement */}
+      <nav
+        className="fixed right-0 bottom-0 left-0 z-40 border-t border-slate-200 bg-white lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="mx-auto flex max-w-2xl">
+          {ONGLETS.map(([cle, libelle]) => (
+            <button
+              key={cle}
+              onClick={() => setOnglet(cle)}
+              className={
+                "relative flex-1 py-3 text-[12px] font-medium " + (onglet === cle ? "text-teal-800" : "text-slate-500")
+              }
+            >
+              {onglet === cle && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-800" />}
+              {libelle}
+              {badges[cle] > 0 && (
+                <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{badges[cle]}</span>
+              )}
+            </button>
+          ))}
         </div>
       </nav>
 
       <Tiroir ouvert={scenario} onClose={() => setScenario(false)} titre="Scénario de la mission">
         <ScenarioSheet />
+      </Tiroir>
+      <Tiroir ouvert={raccourcis} onClose={() => setRaccourcis(false)} titre="Raccourcis clavier">
+        <RaccourcisSheet />
       </Tiroir>
     </div>
   );

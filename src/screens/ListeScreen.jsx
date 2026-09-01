@@ -1,11 +1,49 @@
-import { useMemo, useState } from "react";
-import { Bouton, Puce, Vide } from "../components/ui.jsx";
+import { useMemo, useRef, useState } from "react";
+import { Bouton, Puce, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { ETATS_PROSPECT, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
 
 const ETAT_PAR_CLE = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e]));
 
-function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
+function sansAccents(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/* ------------------------------------------------- téléphone (bureau) */
+
+function Telephone({ numero, flash }) {
+  const tel = telHref(numero);
+  if (!numero) return <span className="text-slate-400">—</span>;
+  return (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      <a href={tel} className="text-slate-800 tabular-nums hover:text-teal-800 hover:underline">
+        {numero}
+      </a>
+      <button
+        onClick={async (e) => {
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(numero);
+            flash?.(`Numéro copié : ${numero}`);
+          } catch {
+            flash?.("Copie refusée par le navigateur.");
+          }
+        }}
+        title="Copier le numéro"
+        className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500 hover:border-slate-400 hover:text-slate-700"
+      >
+        copier
+      </button>
+    </span>
+  );
+}
+
+/* ------------------------------------------------------ carte (mobile) */
+
+function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
   const [ouvert, setOuvert] = useState(false);
   const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
   const tel = telHref(fiche.telephone);
@@ -105,9 +143,97 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
   );
 }
 
-export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSupprimer, onImporter, onVider }) {
+/* ------------------------------------------------------ ligne (bureau) */
+
+function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash }) {
+  const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
+  return (
+    <tr
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target === e.currentTarget) {
+          e.preventDefault();
+          onEncoder(fiche);
+        }
+      }}
+      onDoubleClick={() => onEncoder(fiche)}
+      className={
+        "border-t border-slate-100 align-middle hover:bg-slate-50 focus:bg-teal-50 focus:outline-none " +
+        (fiche.etat === "fait" ? "text-slate-500" : "")
+      }
+    >
+      <td className="py-1.5 pr-2 pl-3 text-[12px] text-slate-400 tabular-nums">{fiche.ordre}</td>
+      <td className="py-1.5 pr-3">
+        <button
+          onClick={() => onEncoder(fiche)}
+          className="text-left text-[13.5px] font-medium text-slate-900 hover:text-teal-800 hover:underline"
+        >
+          {fiche.nom}
+        </button>
+        {doublon && (
+          <span className="ml-2 text-[11px] text-red-700" title={`Même numéro que ${doublon}`}>
+            doublon
+          </span>
+        )}
+        {fiche.adresse && <div className="text-[11.5px] text-slate-500">{fiche.adresse}</div>}
+      </td>
+      <td className="py-1.5 pr-3 text-[12.5px] whitespace-nowrap text-slate-600">
+        {fiche.commune}
+        {fiche.cp ? <span className="text-slate-400"> {fiche.cp}</span> : null}
+      </td>
+      <td className="py-1.5 pr-3 text-[12px] text-slate-600">{fiche.statut || <span className="text-slate-300">—</span>}</td>
+      <td className="py-1.5 pr-3 text-[12.5px]">
+        <Telephone numero={fiche.telephone} flash={flash} />
+      </td>
+      <td className="py-1.5 pr-3">
+        <select
+          value={fiche.etat}
+          onChange={(e) => onEtat(fiche.id, e.target.value)}
+          className={
+            "min-h-[30px] rounded-md border px-1.5 py-0.5 text-[12px] focus:border-teal-700 focus:outline-none " +
+            (fiche.etat === "fait"
+              ? "border-teal-200 bg-teal-50 text-teal-800"
+              : fiche.etat === "a_appeler"
+                ? "border-slate-300 bg-white text-slate-700"
+                : "border-amber-200 bg-amber-50 text-amber-800")
+          }
+        >
+          {ETATS_PROSPECT.map((e) => (
+            <option key={e.key} value={e.key}>
+              {e.label}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="py-1.5 pr-3 text-[11.5px] whitespace-nowrap text-slate-500">
+        {appel ? `${frDate(appel.dateAppel)} ${appel.heureAppel}` : ""}
+      </td>
+      <td className="py-1.5 pr-3 text-right whitespace-nowrap">
+        <button
+          onClick={() => onEncoder(fiche)}
+          className="rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:border-teal-700 hover:text-teal-800"
+        >
+          {appel ? "Revoir" : "Encoder"}
+        </button>
+        <button
+          onClick={() => onSupprimer(fiche.id)}
+          title="Retirer de la liste"
+          className="ml-1 rounded-md px-1.5 py-1 text-[12px] text-slate-400 hover:text-red-700"
+        >
+          ✕
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/* ------------------------------------------------------------- écran */
+
+export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSupprimer, onImporter, onVider, flash }) {
   const [filtre, setFiltre] = useState("tous");
   const [recherche, setRecherche] = useState("");
+  const champRecherche = useRef(null);
+  useRaccourciRecherche(champRecherche);
 
   const appelParFiche = useMemo(() => {
     const map = new Map();
@@ -128,20 +254,11 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
   }, [prospects]);
 
   const filtres = useMemo(() => {
-    const q = recherche
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    const q = sansAccents(recherche.trim());
     return prospects.filter((f) => {
       if (filtre !== "tous" && f.etat !== filtre) return false;
       if (!q) return true;
-      const texte = [f.nom, f.commune, f.cp, f.telephone, f.adresse, f.inami]
-        .join(" ")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      return texte.includes(q);
+      return sansAccents([f.nom, f.commune, f.cp, f.telephone, f.adresse, f.inami].join(" ")).includes(q);
     });
   }, [prospects, filtre, recherche]);
 
@@ -151,7 +268,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
 
   if (!prospects.length) {
     return (
-      <div className="pb-24">
+      <div className="pb-24 lg:pb-0">
         <Vide>
           <p className="mb-3">
             Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà
@@ -163,9 +280,11 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
     );
   }
 
+  const commun = { onEncoder, onEtat, onSupprimer };
+
   return (
-    <div className="pb-24">
-      <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3">
+    <div className="pb-24 lg:pb-0">
+      <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 lg:hidden">
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-medium text-slate-700">
             {faits} / {prospects.length} appelés
@@ -182,12 +301,25 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
         )}
       </div>
 
-      <input
-        value={recherche}
-        onChange={(e) => setRecherche(e.target.value)}
-        placeholder="Chercher un nom, une commune, un numéro…"
-        className="mb-2 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] focus:border-teal-700 focus:outline-none"
-      />
+      <div className="mb-3 lg:flex lg:items-center lg:gap-3">
+        <div className="relative lg:flex-1">
+          <input
+            ref={champRecherche}
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            placeholder="Chercher un nom, une commune, un numéro…"
+            className="mb-2 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] focus:border-teal-700 focus:outline-none lg:mb-0 lg:min-h-[38px] lg:py-1.5 lg:pr-10 lg:text-[14px]"
+          />
+          <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 text-[11px] text-slate-400 lg:block">
+            /
+          </kbd>
+        </div>
+        {restants.length > 0 && (
+          <Bouton onClick={() => onEncoder(restants[0])} className="hidden shrink-0 lg:block">
+            Appeler le suivant : {restants[0].nom}
+          </Bouton>
+        )}
+      </div>
 
       <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
         {[{ key: "tous", label: "Tous" }, ...ETATS_PROSPECT].map((e) => {
@@ -197,8 +329,10 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
               key={e.key}
               onClick={() => setFiltre(e.key)}
               className={
-                "min-h-[36px] shrink-0 rounded-lg border px-3 py-1.5 text-[12.5px] " +
-                (filtre === e.key ? "border-teal-800 bg-teal-800 text-white" : "border-slate-300 bg-white text-slate-700")
+                "min-h-[36px] shrink-0 rounded-lg border px-3 py-1.5 text-[12.5px] lg:min-h-[30px] lg:py-1 " +
+                (filtre === e.key
+                  ? "border-teal-800 bg-teal-800 text-white"
+                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400")
               }
             >
               {e.label} {n > 0 && <span className="opacity-70">{n}</span>}
@@ -207,20 +341,54 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
         })}
       </div>
 
-      <ul>
+      {/* tableau : lecture en un coup d'œil sur grand écran */}
+      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white lg:block">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">
+              <th className="py-2 pr-2 pl-3 text-left font-semibold">N°</th>
+              <th className="py-2 pr-3 text-left font-semibold">Praticien</th>
+              <th className="py-2 pr-3 text-left font-semibold">Commune</th>
+              <th className="py-2 pr-3 text-left font-semibold">Statut Inami</th>
+              <th className="py-2 pr-3 text-left font-semibold">Téléphone</th>
+              <th className="py-2 pr-3 text-left font-semibold">État</th>
+              <th className="py-2 pr-3 text-left font-semibold">Appelé le</th>
+              <th className="py-2 pr-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {filtres.map((fiche) => (
+              <Ligne
+                key={fiche.id}
+                fiche={fiche}
+                appel={appelParFiche.get(fiche.id)}
+                doublon={doublons.get(fiche.id)}
+                flash={flash}
+                {...commun}
+              />
+            ))}
+          </tbody>
+        </table>
+        {!filtres.length && <div className="p-6 text-center text-[13px] text-slate-500">Aucun praticien ne correspond.</div>}
+      </div>
+
+      {/* cartes : plus lisibles au pouce */}
+      <ul className="lg:hidden">
         {filtres.map((fiche) => (
-          <Ligne
+          <Carte
             key={fiche.id}
             fiche={fiche}
             appel={appelParFiche.get(fiche.id)}
             doublon={doublons.get(fiche.id)}
-            onEncoder={onEncoder}
-            onEtat={onEtat}
-            onSupprimer={onSupprimer}
+            {...commun}
           />
         ))}
       </ul>
-      {!filtres.length && <Vide>Aucun praticien ne correspond à ce filtre.</Vide>}
+      {!filtres.length && (
+        <div className="lg:hidden">
+          <Vide>Aucun praticien ne correspond à ce filtre.</Vide>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Bouton variant="ghost" onClick={onImporter}>

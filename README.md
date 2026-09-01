@@ -19,6 +19,45 @@ Trois façons, au choix :
 | Sur le téléphone | Héberger `docs/` (voir plus bas), ouvrir l'adresse, puis « Ajouter à l'écran d'accueil ». |
 | Pour développer | `npm install` puis `npm run dev`. |
 
+### Deux mises en page pour un même outil
+
+L'application change de forme selon la largeur de l'écran ; les données et les
+règles sont exactement les mêmes.
+
+**Au bureau (à partir de 1024 px)** — la mise en page est prévue pour la souris
+et le clavier :
+
+- barre latérale permanente : navigation, avancement, scénario, raccourcis ;
+- la liste d'appel devient un **tableau** : nom, commune, statut, téléphone,
+  état modifiable sur place, dernier appel — tout se lit d'un coup d'œil ;
+- la journée devient elle aussi un tableau, dans l'ordre des colonnes du fichier
+  Excel : heure, résultat, date du rendez-vous, tarif, prix, remarques ;
+- le formulaire d'appel s'accompagne d'une colonne de droite (à partir de
+  1280 px) : la phrase d'ouverture, les réponses aux questions du secrétariat et
+  la file des praticiens suivants, toujours visibles pendant l'appel ;
+- suivi et données s'affichent sur deux colonnes ;
+- les fichiers se **glissent-déposent** depuis l'explorateur ;
+- le bouton d'enregistrement reste collé en bas du formulaire ;
+- les numéros se copient d'un clic (pour un softphone ou un téléphone à côté).
+
+**Sur téléphone** — barre d'onglets en bas, cartes tactiles, cibles de 44 px,
+bouton d'appel qui compose directement le numéro.
+
+### Raccourcis clavier
+
+| Touches | Effet |
+| --- | --- |
+| `Alt` + `1` … `5` | Liste · Appel · Journée · Suivi · Données |
+| `Ctrl` + `Entrée` (ou `Ctrl` + `S`) | Enregistrer l'appel et passer au praticien suivant |
+| `/` | Aller à la recherche |
+| `←` `→` | Choisir une réponse dans le groupe sélectionné |
+| `Espace` | Valider la réponse sélectionnée |
+| `Entrée` | Ouvrir la fiche du praticien sélectionné dans le tableau |
+| `?` | Liste des raccourcis |
+| `Échap` | Fermer la fenêtre ouverte |
+
+Sur Mac, `Ctrl` devient `⌘`.
+
 ### Mettre l'application en ligne (pour le téléphone)
 
 Dans le dépôt GitHub : **Settings → Pages → Source : Deploy from a branch**,
@@ -45,9 +84,10 @@ exemple), un `.csv`, ou coller des lignes copiées depuis Excel. L'application :
 
 ### 2. Appeler — onglet **Liste**
 
-Chaque fiche montre le nom, la commune, le statut, et un **bouton qui compose le
-numéro**. « Encoder » ouvre le formulaire avec province, dentiste, téléphone,
-statut, date **et heure** déjà remplis. Un bandeau rouge prévient si un numéro
+Chaque praticien montre son nom, sa commune, son statut et son numéro — en
+tableau au bureau, en cartes sur téléphone, avec un bouton qui compose le numéro.
+« Encoder » ouvre le formulaire avec province, dentiste, téléphone, statut, date
+**et heure** déjà remplis. Un bandeau rouge prévient si un numéro
 apparaît deux fois : le scénario interdit d'appeler deux fois le même cabinet.
 
 Le bouton « Appeler le suivant » enchaîne les fiches non encore appelées, et une
@@ -69,8 +109,10 @@ l'être :
 - question sur l'intervention majorée ou le registre national → la fiche part
   automatiquement dans les rappels du lendemain.
 
-Le bouton **Scénario**, en haut à droite, ouvre à tout moment la phrase
-d'ouverture, les réponses aux questions du secrétariat et les scénarios A, B et C.
+Le bouton **Scénario** — barre latérale au bureau, en haut à droite sur
+téléphone — ouvre à tout moment la phrase d'ouverture, les réponses aux questions
+du secrétariat et les scénarios A, B et C. Au bureau, ces réponses restent
+affichées en permanence à côté du formulaire.
 
 **Pratique de groupe (scénario C)** : le bouton « Enregistrer et encoder le
 dentiste Y » crée une seconde fiche rattachée à la première. À l'export, elle est
@@ -124,9 +166,9 @@ telles quelles — d'où la conservation des listes déroulantes.
 ```
 src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, export
 src/screens/  Liste · Appel · Journée · Suivi · Données
-src/components/ briques d'interface, panneau d'import, scénario
+src/components/ briques d'interface, panneau d'import, scénario, raccourcis
 docs/         l'application construite, en un seul fichier
-tests/        tests unitaires + parcours complet dans un navigateur
+tests/        tests unitaires + parcours navigateur (e2e.mjs téléphone, e2e-bureau.mjs bureau)
 ```
 
 ### Commandes
@@ -136,7 +178,7 @@ npm install
 npm run dev        # développement
 npm run build      # reconstruit docs/index.html (à refaire après toute modification)
 npm test           # tests unitaires (Node)
-npm run test:e2e   # parcours complet dans Chromium : import, appel, Excel, sauvegarde
+npm run test:e2e   # deux parcours complets dans Chromium : téléphone puis bureau
 ```
 
 Les tests utilisent les vrais fichiers de la mission, dans `tests/fixtures/` :

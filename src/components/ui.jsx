@@ -1,5 +1,21 @@
-// Briques d'interface communes, dimensionnées pour le pouce sur téléphone
-// comme pour la souris au bureau.
+// Briques d'interface communes : assez grandes pour le pouce sur téléphone,
+// pilotables au clavier au bureau.
+import { useEffect, useState } from "react";
+
+/** Branche la touche « / » sur un champ de recherche. */
+export function useRaccourciRecherche(ref) {
+  useEffect(() => {
+    const focus = () => {
+      if (!ref.current) return;
+      ref.current.focus();
+      ref.current.select?.();
+    };
+    document.addEventListener("focus-recherche", focus);
+    return () => document.removeEventListener("focus-recherche", focus);
+  }, [ref]);
+}
+
+const ANNEAU = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-1";
 
 export function Label({ children, hint, htmlFor }) {
   return (
@@ -13,10 +29,20 @@ export function Label({ children, hint, htmlFor }) {
 }
 
 export function Choice({ label, hint, options, value, onChange, auto }) {
+  // les flèches déplacent la sélection dans le groupe : encodage au clavier
+  const auClavier = (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const boutons = [...e.currentTarget.parentElement.querySelectorAll("button")];
+    const depart = boutons.indexOf(e.currentTarget);
+    if (depart < 0) return;
+    e.preventDefault();
+    boutons[(depart + (e.key === "ArrowRight" ? 1 : -1) + boutons.length) % boutons.length].focus();
+  };
+
   return (
     <div className="mb-4">
       {label && <Label hint={hint}>{label}</Label>}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={typeof label === "string" ? label : undefined}>
         {options.map((o) => {
           const on = value === o;
           return (
@@ -24,9 +50,12 @@ export function Choice({ label, hint, options, value, onChange, auto }) {
               key={o}
               type="button"
               aria-pressed={on}
+              onKeyDown={auClavier}
               onClick={() => onChange(on ? "" : o)}
               className={
-                "min-h-[42px] rounded-lg border px-3 py-2 text-[13px] transition-colors " +
+                "min-h-[42px] rounded-lg border px-3 py-2 text-[13px] transition-colors lg:min-h-[36px] lg:py-1.5 " +
+                ANNEAU +
+                " " +
                 (on
                   ? "border-teal-800 bg-teal-800 font-medium text-white"
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 active:bg-slate-100")
@@ -69,7 +98,7 @@ export function Field({
           placeholder={placeholder}
           list={list}
           onChange={(e) => onChange(e.target.value)}
-          className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] text-slate-900 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none"
+          className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] text-slate-900 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none lg:min-h-[38px] lg:py-1.5 lg:text-[14px]"
         />
         {suffix}
       </div>
@@ -87,7 +116,7 @@ export function Area({ label, value, onChange, placeholder, rows = 3 }) {
         value={value ?? ""}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] text-slate-900 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] text-slate-900 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 focus:outline-none lg:py-2 lg:text-[14px]"
       />
     </div>
   );
@@ -100,7 +129,7 @@ export function Select({ label, value, onChange, options, hint, compact }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] text-slate-900 focus:border-teal-700 focus:outline-none"
+        className="min-h-[40px] w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-[13px] text-slate-900 focus:border-teal-700 focus:outline-none lg:min-h-[36px] lg:py-1"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -108,6 +137,48 @@ export function Select({ label, value, onChange, options, hint, compact }) {
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+
+/**
+ * Dépôt de fichier : cliquer n'importe où dans le cadre, ou y glisser le
+ * fichier depuis l'explorateur — c'est le geste naturel au bureau.
+ */
+export function ZoneFichier({ accept, onFichier, libelle, aide, ton = "primary" }) {
+  const [survol, setSurvol] = useState(false);
+  const bouton =
+    ton === "primary"
+      ? "bg-teal-800 text-white"
+      : "border border-slate-300 bg-white text-slate-800";
+  return (
+    <div
+      onDragEnter={() => setSurvol(true)}
+      onDragOver={() => setSurvol(true)}
+      onDragLeave={() => setSurvol(false)}
+      onDrop={() => setSurvol(false)}
+      className={
+        "relative mb-3 rounded-xl border-2 border-dashed p-4 text-center transition-colors " +
+        (survol ? "border-teal-700 bg-teal-50" : "border-slate-300 bg-slate-50/60 hover:border-slate-400")
+      }
+    >
+      <input
+        type="file"
+        accept={accept}
+        onChange={(e) => {
+          const fichier = e.target.files && e.target.files[0];
+          e.target.value = "";
+          if (fichier) onFichier(fichier);
+        }}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        aria-label={libelle}
+      />
+      <div className="pointer-events-none">
+        <span className={"inline-block rounded-lg px-4 py-2 text-[14px] font-medium " + bouton}>{libelle}</span>
+        <p className="mt-2 hidden text-[12px] text-slate-500 lg:block">ou glisse le fichier ici</p>
+        {aide && <p className="mt-1 text-[11.5px] text-slate-500">{aide}</p>}
+      </div>
     </div>
   );
 }
@@ -134,9 +205,9 @@ export function Block({ title, tone = "plain", children, action }) {
 
 export function Bouton({ children, onClick, variant = "primary", disabled, className = "", type = "button", title }) {
   const styles = {
-    primary: "bg-teal-800 text-white active:bg-teal-900 disabled:bg-slate-300",
-    ghost: "border border-slate-300 bg-white text-slate-800 active:bg-slate-100 disabled:text-slate-400",
-    danger: "border border-red-300 bg-white text-red-700 active:bg-red-50",
+    primary: "bg-teal-800 text-white hover:bg-teal-900 active:bg-teal-900 disabled:bg-slate-300 disabled:hover:bg-slate-300",
+    ghost: "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100 disabled:text-slate-400",
+    danger: "border border-red-300 bg-white text-red-700 hover:bg-red-50 active:bg-red-50",
   };
   return (
     <button
@@ -144,7 +215,7 @@ export function Bouton({ children, onClick, variant = "primary", disabled, class
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className={`min-h-[44px] rounded-lg px-4 py-2.5 text-[14px] font-medium transition-colors ${styles[variant]} ${className}`}
+      className={`min-h-[44px] rounded-lg px-4 py-2.5 text-[14px] font-medium transition-colors lg:min-h-[38px] lg:py-2 ${ANNEAU} ${styles[variant]} ${className}`}
     >
       {children}
     </button>
@@ -188,7 +259,7 @@ export function Tiroir({ ouvert, onClose, titre, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center" onClick={onClose}>
       <div
-        className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl sm:rounded-2xl"
+        className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl sm:rounded-2xl lg:max-h-[85vh] lg:max-w-3xl lg:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky -top-4 -mx-4 mb-3 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
