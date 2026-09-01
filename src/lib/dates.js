@@ -30,18 +30,26 @@ export function isoDate(value) {
   return `${year}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
 }
 
-const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-const MOIS = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
+const JOURS = {
+  fr: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
+  nl: ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"],
+  en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+};
 
-/** "aaaa-mm-jj" -> "lundi 1 septembre 2026" */
-export function dateLongue(iso) {
+const MOIS = {
+  fr: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
+  nl: ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"],
+  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+};
+
+/** "aaaa-mm-jj" -> "lundi 1 septembre 2026" (ou son équivalent nl / en). */
+export function dateLongue(iso, langue = "fr") {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
   if (!m) return "";
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
+  const jours = JOURS[langue] || JOURS.fr;
+  const mois = MOIS[langue] || MOIS.fr;
+  return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function fromIso(iso) {

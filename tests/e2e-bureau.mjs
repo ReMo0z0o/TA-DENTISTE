@@ -55,7 +55,7 @@ await page.waitForSelector("aside h1");
 console.log(`\nJeu de fichiers : ${jeu.nom}`);
 console.log("\n1. Mise en page bureau");
 verifie("barre latérale affichée", await page.isVisible("aside nav"));
-verifie("barre du bas masquée", !(await page.isVisible("body > nav")));
+verifie("barre du bas masquée", !(await page.isVisible('[data-role="onglets-mobile"]')));
 verifie("raccourcis annoncés dans la barre latérale", (await page.textContent("aside")).includes("alt+1"));
 
 console.log("\n2. Import par la zone de dépôt");
@@ -142,7 +142,42 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n9. Aucune erreur JavaScript");
+console.log("\n9. Langue de l'interface");
+const tsvFrancais = await page.inputValue("textarea[readonly]");
+verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
+
+await page.click('aside button[title="Nederlands"]');
+await page.waitForTimeout(300);
+verifie("navigation en néerlandais", (await page.textContent("aside nav")).includes("Lijst"), (await page.textContent("aside nav")).replace(/\s+/g, " ").slice(0, 60));
+verifie("titre de page en néerlandais", (await page.textContent("main, body")).includes("Gegevens"));
+verifie("attribut lang du document", (await page.getAttribute("html", "lang")) === "nl");
+const tsvApresNl = await page.inputValue("textarea[readonly]");
+verifie("l'export reste en français en néerlandais", tsvApresNl === tsvFrancais, tsvApresNl.slice(0, 80));
+
+await page.keyboard.press("Alt+2");
+await page.waitForTimeout(250);
+const reponsesNl = await page.textContent("aside:last-of-type, body");
+verifie("réponses aux choix traduites (ja / nee)", await page.isVisible("button:text-is('ja')"));
+verifie("scénario en néerlandais", reponsesNl.includes("Ik bel om een afspraak"), "");
+
+await page.keyboard.press("Alt+5");
+await page.waitForTimeout(200);
+await page.click('aside button[title="English"]');
+await page.waitForTimeout(300);
+verifie("navigation en anglais", (await page.textContent("aside nav")).includes("List"));
+const tsvApresEn = await page.inputValue("textarea[readonly]");
+verifie("l'export reste en français en anglais", tsvApresEn === tsvFrancais, tsvApresEn.slice(0, 80));
+await page.screenshot({ path: path.join(SORTIES, "pc-anglais.png") });
+
+// la langue survit au rechargement
+await page.reload();
+await page.waitForSelector("aside h1");
+verifie("langue mémorisée après rechargement", (await page.textContent("aside nav")).includes("List"));
+await page.click('aside button[title="Français"]');
+await page.waitForTimeout(300);
+verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
+
+console.log("\n10. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

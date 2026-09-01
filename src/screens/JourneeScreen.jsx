@@ -2,38 +2,41 @@ import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { besoinRappel, ordreExport } from "../lib/model.js";
 import { dateLongue, frDate } from "../lib/dates.js";
+import { useT } from "../lib/i18n.js";
 
 function Resume({ call }) {
+  const t = useT();
   if (call.rdvPossible === "oui") {
     return (
       <>
-        RDV le <strong>{frDate(call.datePremierRdv) || "?"}</strong>
-        {call.supplementPremierRdv ? ` — ${call.supplementPremierRdv}` : ""}
+        {t("RDV le")} <strong>{frDate(call.datePremierRdv) || "?"}</strong>
+        {call.supplementPremierRdv ? ` — ${t.valeur(call.supplementPremierRdv)}` : ""}
         {call.prix ? ` · ${call.prix} €` : ""}
       </>
     );
   }
   if (call.rdvPossible === "non") {
-    return <>Pas de rendez-vous{call.raison ? ` — ${call.raison}` : ""}</>;
+    return <>{t("Pas de rendez-vous")}{call.raison ? ` — ${t.valeur(call.raison)}` : ""}</>;
   }
-  return <span className="text-slate-400">Résultat non renseigné</span>;
+  return <span className="text-slate-400">{t("Résultat non renseigné")}</span>;
 }
 
 function Actions({ call, onEditer, onSupprimer, onDentisteY, compact }) {
+  const t = useT();
   return (
     <div className={compact ? "flex flex-wrap gap-2" : "flex justify-end gap-1 whitespace-nowrap"}>
       {compact ? (
         <>
           <Bouton variant="ghost" onClick={() => onEditer(call)}>
-            Modifier
+            {t("Modifier")}
           </Bouton>
           {!call.roleY && (
             <Bouton variant="ghost" onClick={() => onDentisteY(call)}>
-              Ajouter le dentiste Y
+              {t("Ajouter le dentiste Y")}
             </Bouton>
           )}
           <Bouton variant="danger" onClick={() => onSupprimer(call.id)}>
-            Supprimer
+            {t("Supprimer")}
           </Bouton>
         </>
       ) : (
@@ -42,12 +45,12 @@ function Actions({ call, onEditer, onSupprimer, onDentisteY, compact }) {
             onClick={() => onEditer(call)}
             className="rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:border-teal-700 hover:text-teal-800"
           >
-            Modifier
+            {t("Modifier")}
           </button>
           {!call.roleY && (
             <button
               onClick={() => onDentisteY(call)}
-              title="Encoder le dentiste Y de la même pratique"
+              title={t("Encoder le dentiste Y de la même pratique")}
               className="rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:border-amber-500 hover:text-amber-700"
             >
               + Y
@@ -55,7 +58,7 @@ function Actions({ call, onEditer, onSupprimer, onDentisteY, compact }) {
           )}
           <button
             onClick={() => onSupprimer(call.id)}
-            title="Supprimer cet appel"
+            title={t("Supprimer cet appel")}
             className="rounded-md px-1.5 py-1 text-[12px] text-slate-400 hover:text-red-700"
           >
             ✕
@@ -67,6 +70,7 @@ function Actions({ call, onEditer, onSupprimer, onDentisteY, compact }) {
 }
 
 export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentisteY }) {
+  const t = useT();
   const [recherche, setRecherche] = useState("");
   const [ouvert, setOuvert] = useState(null);
   const champRecherche = useRef(null);
@@ -87,7 +91,7 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
   }, [calls, recherche]);
 
   if (!calls.length) {
-    return <Vide>Aucun appel enregistré pour l'instant. Commence par l'onglet « Liste » ou « Appel ».</Vide>;
+    return <Vide>{t("Aucun appel enregistré pour l'instant. Commence par l'onglet « Liste » ou « Appel ».")}</Vide>;
   }
 
   const actions = { onEditer, onSupprimer, onDentisteY };
@@ -99,7 +103,7 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
           ref={champRecherche}
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
-          placeholder="Chercher dans les appels…"
+          placeholder={t("Chercher dans les appels…")}
           className="min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] focus:border-teal-700 focus:outline-none lg:min-h-[38px] lg:py-1.5 lg:pr-10 lg:text-[14px]"
         />
         <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 text-[11px] text-slate-400 lg:block">
@@ -112,14 +116,14 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">
-              <th className="py-2 pr-2 pl-3 text-left font-semibold">Heure</th>
-              <th className="py-2 pr-3 text-left font-semibold">Dentiste</th>
-              <th className="py-2 pr-3 text-left font-semibold">Statut</th>
-              <th className="py-2 pr-3 text-left font-semibold">Résultat</th>
-              <th className="py-2 pr-3 text-left font-semibold">1er RDV</th>
-              <th className="py-2 pr-3 text-left font-semibold">Tarif</th>
-              <th className="py-2 pr-3 text-left font-semibold">Prix</th>
-              <th className="py-2 pr-3 text-left font-semibold">Remarques</th>
+              <th className="py-2 pr-2 pl-3 text-left font-semibold">{t("Heure")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Dentiste")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Statut")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Résultat")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("1er RDV")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Tarif")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Prix")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Remarques")}</th>
               <th className="py-2 pr-3" />
             </tr>
           </thead>
@@ -136,7 +140,8 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
         {groupes.map(([date, liste]) => (
           <section key={date} className="mb-5">
             <h2 className="mb-2 text-[12px] font-semibold tracking-wide text-slate-500 uppercase">
-              {date === "sans date" ? "Sans date" : dateLongue(date)} · {liste.length} appel{liste.length > 1 ? "s" : ""}
+              {date === "sans date" ? t("Sans date") : dateLongue(date, t.langue)} ·{" "}
+              {t.n(liste.length, "{n} appel", "{n} appels")}
             </h2>
             <ul>
               {liste.map((call) => (
@@ -150,13 +155,13 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[15px] font-medium text-slate-900">{call.dentiste || "Sans nom"}</span>
+                        <span className="text-[15px] font-medium text-slate-900">{call.dentiste || t("Sans nom")}</span>
                         {call.heureAppel && <Puce>{call.heureAppel}</Puce>}
-                        {call.roleY && <Puce tone="amber">dentiste Y</Puce>}
-                        {besoinRappel(call) && !call.rappelFait && <Puce tone="amber">à rappeler</Puce>}
+                        {call.roleY && <Puce tone="amber">{t("dentiste Y")}</Puce>}
+                        {besoinRappel(call) && !call.rappelFait && <Puce tone="amber">{t("à rappeler")}</Puce>}
                       </div>
                       <div className="mt-0.5 text-[12px] text-slate-500">
-                        {[call.province, call.statut, call.telephone].filter(Boolean).join(" · ")}
+                        {[call.province, t.valeur(call.statut), call.telephone].filter(Boolean).join(" · ")}
                       </div>
                       <div className="mt-1 text-[13px] text-slate-700">
                         <Resume call={call} />
@@ -188,6 +193,7 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
 
 /** Un jour d'appels dans le tableau : un intertitre puis ses lignes. */
 function JourGroupe({ date, liste, actions }) {
+  const t = useT();
   return (
     <>
       <tr>
@@ -195,7 +201,8 @@ function JourGroupe({ date, liste, actions }) {
           colSpan={9}
           className="border-t border-slate-200 bg-slate-50/70 py-1.5 pl-3 text-[11.5px] font-semibold tracking-wide text-slate-500 uppercase"
         >
-          {date === "sans date" ? "Sans date" : dateLongue(date)} · {liste.length} appel{liste.length > 1 ? "s" : ""}
+          {date === "sans date" ? t("Sans date") : dateLongue(date, t.langue)} ·{" "}
+          {t.n(liste.length, "{n} appel", "{n} appels")}
         </td>
       </tr>
       {liste.map((call) => (
@@ -206,20 +213,25 @@ function JourGroupe({ date, liste, actions }) {
               onClick={() => actions.onEditer(call)}
               className="text-left text-[13.5px] font-medium text-slate-900 hover:text-teal-800 hover:underline"
             >
-              {call.dentiste || "Sans nom"}
+              {call.dentiste || t("Sans nom")}
             </button>
             <div className="flex flex-wrap items-center gap-1.5">
-              {call.roleY && <Puce tone="amber">dentiste Y</Puce>}
-              {besoinRappel(call) && !call.rappelFait && <Puce tone="amber">à rappeler</Puce>}
+              {call.roleY && <Puce tone="amber">{t("dentiste Y")}</Puce>}
+              {besoinRappel(call) && !call.rappelFait && <Puce tone="amber">{t("à rappeler")}</Puce>}
               <span className="text-[11.5px] text-slate-500">{call.telephone}</span>
             </div>
           </td>
-          <td className="py-1.5 pr-3 text-[12px] text-slate-600">{call.statut || <span className="text-slate-300">—</span>}</td>
+          <td className="py-1.5 pr-3 text-[12px] text-slate-600">
+            {t.valeur(call.statut) || <span className="text-slate-300">—</span>}
+          </td>
           <td className="py-1.5 pr-3 text-[12.5px]">
             {call.rdvPossible === "oui" ? (
-              <span className="text-teal-800">rendez-vous</span>
+              <span className="text-teal-800">{t("rendez-vous")}</span>
             ) : call.rdvPossible === "non" ? (
-              <span className="text-amber-800">refus{call.raison ? ` · ${call.raison}` : ""}</span>
+              <span className="text-amber-800">
+                {t("refus")}
+                {call.raison ? ` · ${t.valeur(call.raison)}` : ""}
+              </span>
             ) : (
               <span className="text-slate-300">—</span>
             )}
@@ -228,7 +240,7 @@ function JourGroupe({ date, liste, actions }) {
             {frDate(call.datePremierRdv) || <span className="text-slate-300">—</span>}
           </td>
           <td className="py-1.5 pr-3 text-[12px] text-slate-600">
-            {call.supplementPremierRdv || <span className="text-slate-300">—</span>}
+            {t.valeur(call.supplementPremierRdv) || <span className="text-slate-300">—</span>}
           </td>
           <td className="py-1.5 pr-3 text-[12.5px] text-slate-700 tabular-nums">
             {call.prix ? `${call.prix} €` : <span className="text-slate-300">—</span>}

@@ -13,10 +13,11 @@ import {
   prospectsDepuis,
 } from "../lib/importers.js";
 import { PROVINCES, STATUTS } from "../lib/model.js";
-
-const CHAMPS_OPTIONS = CHAMPS_LISTE.map((c) => ({ value: c.key, label: c.label }));
+import { useT } from "../lib/i18n.js";
 
 export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash }) {
+  const t = useT();
+  const champsOptions = CHAMPS_LISTE.map((c) => ({ value: c.key, label: t(c.label) }));
   const [source, setSource] = useState(null); // { nom, feuilles }
   const [feuilleIndex, setFeuilleIndex] = useState(0);
   const [genre, setGenre] = useState("liste");
@@ -53,12 +54,12 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
         return;
       }
       if (!lu.feuilles.length || !lu.feuilles[0].rows.length) {
-        flash("Ce fichier ne contient aucune ligne exploitable.");
+        flash(t("Ce fichier ne contient aucune ligne exploitable."));
         return;
       }
       prepare(lu.feuilles, lu.nom);
     } catch (err) {
-      flash(err.message || "Lecture du fichier impossible.");
+      flash(err.message || t("Lecture du fichier impossible."));
     }
   };
 
@@ -70,13 +71,13 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
         onSauvegarde(JSON.parse(brut));
         setTexte("");
       } catch {
-        flash("Ce code de reprise est illisible — il a peut-être été tronqué.");
+        flash(t("Ce code de reprise est illisible — il a peut-être été tronqué."));
       }
       return;
     }
     const lignes = parseDelimited(brut);
     if (!lignes.length) {
-      flash("Rien à charger.");
+      flash(t("Rien à charger."));
       return;
     }
     prepare([{ nom: "collage", rows: lignes }], "collage");
@@ -104,8 +105,8 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
     if (!resultat.length) {
       flash(
         genre === "reponses"
-          ? "Aucun appel trouvé dans ce tableau."
-          : "Aucun praticien trouvé : vérifie la correspondance des colonnes."
+          ? t("Aucun appel trouvé dans ce tableau.")
+          : t("Aucun praticien trouvé : vérifie la correspondance des colonnes.")
       );
       return;
     }
@@ -119,19 +120,17 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
 
   return (
     <>
-      <Block title="Charger une liste d'appel">
+      <Block title={t("Charger une liste d'appel")}>
         <p className="mb-3 text-[13px] text-slate-600">
-          Un fichier <strong>.xlsx</strong> ou <strong>.csv</strong> de praticiens (comme
-          « Dentistes_Hainaut_liste_appels.xlsx »), ou des lignes copiées depuis Excel. Province, nom et téléphone
-          seront ensuite déjà remplis à chaque appel.
+          {t("Un fichier .xlsx ou .csv de praticiens, ou des lignes copiées depuis Excel. Province, nom et téléphone seront ensuite déjà remplis à chaque appel.")}
         </p>
         <ZoneFichier
           accept=".xlsx,.xlsm,.csv,.tsv,.txt,.json,application/json,text/csv,text/plain"
           onFichier={surFichier}
-          libelle="Choisir un fichier"
-          aide="Liste .xlsx ou .csv, ou sauvegarde .json"
+          libelle={t("Choisir un fichier")}
+          aide={t("Liste .xlsx ou .csv, ou sauvegarde .json")}
         />
-        <Label hint="Colle ici des lignes copiées depuis Excel, ou un code de reprise .json.">Ou coller</Label>
+        <Label hint={t("Colle ici des lignes copiées depuis Excel, ou un code de reprise .json.")}>{t("Ou coller")}</Label>
         <textarea
           rows={3}
           value={texte}
@@ -140,23 +139,23 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-[12px] focus:border-teal-700 focus:outline-none"
         />
         <Bouton variant="ghost" onClick={surCollage} disabled={!texte.trim()} className="mt-2 w-full">
-          Lire ce texte
+          {t("Lire ce texte")}
         </Bouton>
       </Block>
 
-      <Tiroir ouvert={Boolean(source)} onClose={() => setSource(null)} titre="Vérifier avant d'importer">
+      <Tiroir ouvert={Boolean(source)} onClose={() => setSource(null)} titre={t("Vérifier avant d'importer")}>
         {source && (
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-slate-600">
             <Puce tone="teal">{source.nom}</Puce>
             <span>
-              {nbBrutes} ligne{nbBrutes > 1 ? "s" : ""} lue{nbBrutes > 1 ? "s" : ""} · {nbColonnes} colonnes
+              {t.n(nbBrutes, "{n} ligne lue", "{n} lignes lues")} · {t("{n} colonnes", { n: nbColonnes })}
             </span>
           </div>
 
           {source.feuilles.length > 1 && (
             <Select
-              label="Feuille"
+              label={t("Feuille")}
               value={String(feuilleIndex)}
               onChange={(v) => prepare(source.feuilles, source.nom, Number(v))}
               options={source.feuilles.map((f, i) => ({ value: String(i), label: f.nom }))}
@@ -164,12 +163,12 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
           )}
 
           <Select
-            label="Ce fichier contient"
+            label={t("Ce fichier contient")}
             value={genre}
             onChange={setGenre}
             options={[
-              { value: "liste", label: "Une liste de praticiens à appeler" },
-              { value: "reponses", label: "Un tableau de réponses déjà rempli (23 colonnes)" },
+              { value: "liste", label: t("Une liste de praticiens à appeler") },
+              { value: "reponses", label: t("Un tableau de réponses déjà rempli (23 colonnes)") },
             ]}
           />
 
@@ -177,20 +176,23 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
             <>
               <div className="mb-3 grid gap-x-3 sm:grid-cols-2">
                 <Select
-                  label="Province si absente du fichier"
+                  label={t("Province si absente du fichier")}
                   value={contexte.province}
                   onChange={(v) => setContexte((c) => ({ ...c, province: v }))}
-                  options={[{ value: "", label: "— aucune —" }, ...PROVINCES.map((p) => ({ value: p, label: p }))]}
+                  options={[{ value: "", label: t("— aucune —") }, ...PROVINCES.map((p) => ({ value: p, label: p }))]}
                 />
                 <Select
-                  label="Statut Inami de cette liste"
+                  label={t("Statut Inami de cette liste")}
                   value={contexte.statut}
                   onChange={(v) => setContexte((c) => ({ ...c, statut: v }))}
-                  options={[{ value: "", label: "— aucun —" }, ...STATUTS.map((s) => ({ value: s, label: s }))]}
+                  options={[
+                    { value: "", label: t("— aucun —") },
+                    ...STATUTS.map((s) => ({ value: s, label: t.valeur(s) })),
+                  ]}
                 />
               </div>
 
-              <Label hint="Corrige si une colonne n'a pas été reconnue.">Correspondance des colonnes</Label>
+              <Label hint={t("Corrige si une colonne n'a pas été reconnue.")}>{t("Correspondance des colonnes")}</Label>
               <div className="-mx-3 mb-3 overflow-x-auto px-3">
                 <table className="min-w-full text-[12px]">
                   <thead>
@@ -206,7 +208,7 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
                             }}
                             className="min-h-[36px] w-full min-w-[130px] rounded border border-slate-300 bg-white px-1 py-1 text-[12px]"
                           >
-                            {CHAMPS_OPTIONS.map((o) => (
+                            {champsOptions.map((o) => (
                               <option key={o.value} value={o.value}>
                                 {o.label}
                               </option>
@@ -234,18 +236,18 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
 
           {genre === "reponses" && (
             <p className="mb-3 text-[13px] text-slate-600">
-              Les 23 colonnes du fichier de réponses seront reprises telles quelles comme appels déjà encodés.
+              {t("Les 23 colonnes du fichier de réponses seront reprises telles quelles comme appels déjà encodés.")}
             </p>
           )}
 
             <div className="flex flex-wrap gap-2">
               <Bouton onClick={importer} className="flex-1">
                 {genre === "reponses"
-                  ? `Importer ${nbLignes} appel${nbLignes > 1 ? "s" : ""}`
-                  : `Importer ${nbLignes} praticien${nbLignes > 1 ? "s" : ""}`}
+                  ? t.n(nbLignes, "Importer {n} appel", "Importer {n} appels")
+                  : t.n(nbLignes, "Importer {n} praticien", "Importer {n} praticiens")}
               </Bouton>
               <Bouton variant="ghost" onClick={() => setSource(null)}>
-                Annuler
+                {t("Annuler")}
               </Bouton>
             </div>
           </div>

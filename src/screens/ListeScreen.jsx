@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { ETATS_PROSPECT, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
+import { useT } from "../lib/i18n.js";
 
 const ETAT_PAR_CLE = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e]));
 
@@ -15,6 +16,7 @@ function sansAccents(s) {
 /* ------------------------------------------------- téléphone (bureau) */
 
 function Telephone({ numero, flash }) {
+  const t = useT();
   const tel = telHref(numero);
   if (!numero) return <span className="text-slate-400">—</span>;
   return (
@@ -27,15 +29,15 @@ function Telephone({ numero, flash }) {
           e.stopPropagation();
           try {
             await navigator.clipboard.writeText(numero);
-            flash?.(`Numéro copié : ${numero}`);
+            flash?.(t("Numéro copié : {numero}", { numero }));
           } catch {
-            flash?.("Copie refusée par le navigateur.");
+            flash?.(t("Copie refusée par le navigateur."));
           }
         }}
-        title="Copier le numéro"
+        title={t("Copier le numéro")}
         className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] text-slate-500 hover:border-slate-400 hover:text-slate-700"
       >
-        copier
+        {t("copier")}
       </button>
     </span>
   );
@@ -44,6 +46,7 @@ function Telephone({ numero, flash }) {
 /* ------------------------------------------------------ carte (mobile) */
 
 function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
+  const t = useT();
   const [ouvert, setOuvert] = useState(false);
   const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
   const tel = telHref(fiche.telephone);
@@ -60,12 +63,12 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
           </div>
           {fiche.statut && (
             <div className="mt-1">
-              <Puce tone="teal">{fiche.statut}</Puce>
+              <Puce tone="teal">{t.valeur(fiche.statut)}</Puce>
             </div>
           )}
         </div>
         <div className="shrink-0 text-right">
-          <Puce tone={etat.tone}>{etat.label}</Puce>
+          <Puce tone={etat.tone}>{t(etat.label)}</Puce>
           {appel && (
             <div className="mt-1 text-[11px] text-slate-500">
               {frDate(appel.dateAppel)} {appel.heureAppel}
@@ -76,7 +79,7 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
 
       {doublon && (
         <div className="mt-2 rounded-lg bg-red-50 px-2 py-1 text-[11.5px] text-red-700">
-          Même numéro que « {doublon} » — ne pas appeler deux fois le même cabinet.
+          {t("Même numéro que « {nom} » — ne pas appeler deux fois le même cabinet.", { nom: doublon })}
         </div>
       )}
 
@@ -90,12 +93,12 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
           </a>
         )}
         <Bouton variant="ghost" onClick={() => onEncoder(fiche)} className="flex-1">
-          {appel ? "Revoir l'appel" : "Encoder"}
+          {appel ? t("Revoir l'appel") : t("Encoder")}
         </Bouton>
         <button
           onClick={() => setOuvert(!ouvert)}
           className="min-h-[42px] rounded-lg border border-slate-300 px-3 text-[13px] text-slate-600"
-          aria-label="Plus d'options"
+          aria-label={t("Plus d'options")}
         >
           ⋯
         </button>
@@ -130,12 +133,12 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
                     : "border-slate-300 bg-white text-slate-700")
                 }
               >
-                {e.label}
+                {t(e.label)}
               </button>
             ))}
           </div>
           <button onClick={() => onSupprimer(fiche.id)} className="text-[12.5px] text-red-700 underline underline-offset-2">
-            Retirer de la liste
+            {t("Retirer de la liste")}
           </button>
         </div>
       )}
@@ -146,7 +149,7 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
 /* ------------------------------------------------------ ligne (bureau) */
 
 function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash }) {
-  const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
+  const t = useT();
   return (
     <tr
       tabIndex={0}
@@ -171,8 +174,8 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
           {fiche.nom}
         </button>
         {doublon && (
-          <span className="ml-2 text-[11px] text-red-700" title={`Même numéro que ${doublon}`}>
-            doublon
+          <span className="ml-2 text-[11px] text-red-700" title={t("Même numéro que {nom}", { nom: doublon })}>
+            {t("doublon")}
           </span>
         )}
         {fiche.adresse && <div className="text-[11.5px] text-slate-500">{fiche.adresse}</div>}
@@ -181,7 +184,9 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
         {fiche.commune}
         {fiche.cp ? <span className="text-slate-400"> {fiche.cp}</span> : null}
       </td>
-      <td className="py-1.5 pr-3 text-[12px] text-slate-600">{fiche.statut || <span className="text-slate-300">—</span>}</td>
+      <td className="py-1.5 pr-3 text-[12px] text-slate-600">
+        {t.valeur(fiche.statut) || <span className="text-slate-300">—</span>}
+      </td>
       <td className="py-1.5 pr-3 text-[12.5px]">
         <Telephone numero={fiche.telephone} flash={flash} />
       </td>
@@ -200,7 +205,7 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
         >
           {ETATS_PROSPECT.map((e) => (
             <option key={e.key} value={e.key}>
-              {e.label}
+              {t(e.label)}
             </option>
           ))}
         </select>
@@ -213,11 +218,11 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
           onClick={() => onEncoder(fiche)}
           className="rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:border-teal-700 hover:text-teal-800"
         >
-          {appel ? "Revoir" : "Encoder"}
+          {appel ? t("Revoir") : t("Encoder")}
         </button>
         <button
           onClick={() => onSupprimer(fiche.id)}
-          title="Retirer de la liste"
+          title={t("Retirer de la liste")}
           className="ml-1 rounded-md px-1.5 py-1 text-[12px] text-slate-400 hover:text-red-700"
         >
           ✕
@@ -230,6 +235,7 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
 /* ------------------------------------------------------------- écran */
 
 export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSupprimer, onImporter, onVider, flash }) {
+  const t = useT();
   const [filtre, setFiltre] = useState("tous");
   const [recherche, setRecherche] = useState("");
   const champRecherche = useRef(null);
@@ -271,10 +277,9 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       <div className="pb-24 lg:pb-0">
         <Vide>
           <p className="mb-3">
-            Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà
-            remplis à chaque appel.
+            {t("Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà remplis à chaque appel.")}
           </p>
-          <Bouton onClick={onImporter}>Charger une liste d'appel</Bouton>
+          <Bouton onClick={onImporter}>{t("Charger une liste d'appel")}</Bouton>
         </Vide>
       </div>
     );
@@ -287,16 +292,16 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 lg:hidden">
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-medium text-slate-700">
-            {faits} / {prospects.length} appelés
+            {t("{faits} / {total} appelés", { faits, total: prospects.length })}
           </span>
-          <span className="text-[12px] text-slate-500">{restants.length} restants</span>
+          <span className="text-[12px] text-slate-500">{t("{n} restants", { n: restants.length })}</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${pourcent}%` }} />
         </div>
         {restants.length > 0 && (
           <Bouton onClick={() => onEncoder(restants[0])} className="mt-3 w-full">
-            Appeler le suivant : {restants[0].nom}
+            {t("Appeler le suivant : {nom}", { nom: restants[0].nom })}
           </Bouton>
         )}
       </div>
@@ -307,7 +312,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
             ref={champRecherche}
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Chercher un nom, une commune, un numéro…"
+            placeholder={t("Chercher un nom, une commune, un numéro…")}
             className="mb-2 min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-[15px] focus:border-teal-700 focus:outline-none lg:mb-0 lg:min-h-[38px] lg:py-1.5 lg:pr-10 lg:text-[14px]"
           />
           <kbd className="pointer-events-none absolute top-1/2 right-3 hidden -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1.5 text-[11px] text-slate-400 lg:block">
@@ -316,7 +321,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
         </div>
         {restants.length > 0 && (
           <Bouton onClick={() => onEncoder(restants[0])} className="hidden shrink-0 lg:block">
-            Appeler le suivant : {restants[0].nom}
+            {t("Appeler le suivant : {nom}", { nom: restants[0].nom })}
           </Bouton>
         )}
       </div>
@@ -335,7 +340,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400")
               }
             >
-              {e.label} {n > 0 && <span className="opacity-70">{n}</span>}
+              {t(e.label)} {n > 0 && <span className="opacity-70">{n}</span>}
             </button>
           );
         })}
@@ -346,13 +351,13 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">
-              <th className="py-2 pr-2 pl-3 text-left font-semibold">N°</th>
-              <th className="py-2 pr-3 text-left font-semibold">Praticien</th>
-              <th className="py-2 pr-3 text-left font-semibold">Commune</th>
-              <th className="py-2 pr-3 text-left font-semibold">Statut Inami</th>
-              <th className="py-2 pr-3 text-left font-semibold">Téléphone</th>
-              <th className="py-2 pr-3 text-left font-semibold">État</th>
-              <th className="py-2 pr-3 text-left font-semibold">Appelé le</th>
+              <th className="py-2 pr-2 pl-3 text-left font-semibold">{t("N°")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Praticien")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Commune")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Statut Inami")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Téléphone")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("État")}</th>
+              <th className="py-2 pr-3 text-left font-semibold">{t("Appelé le")}</th>
               <th className="py-2 pr-3" />
             </tr>
           </thead>
@@ -369,7 +374,9 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
             ))}
           </tbody>
         </table>
-        {!filtres.length && <div className="p-6 text-center text-[13px] text-slate-500">Aucun praticien ne correspond.</div>}
+        {!filtres.length && (
+          <div className="p-6 text-center text-[13px] text-slate-500">{t("Aucun praticien ne correspond.")}</div>
+        )}
       </div>
 
       {/* cartes : plus lisibles au pouce */}
@@ -386,16 +393,16 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       </ul>
       {!filtres.length && (
         <div className="lg:hidden">
-          <Vide>Aucun praticien ne correspond à ce filtre.</Vide>
+          <Vide>{t("Aucun praticien ne correspond à ce filtre.")}</Vide>
         </div>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Bouton variant="ghost" onClick={onImporter}>
-          Ajouter une autre liste
+          {t("Ajouter une autre liste")}
         </Bouton>
         <Bouton variant="danger" onClick={onVider}>
-          Vider la liste d'appel
+          {t("Vider la liste d'appel")}
         </Bouton>
       </div>
     </div>

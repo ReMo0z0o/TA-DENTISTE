@@ -76,20 +76,30 @@ export function normalise(s) {
 
 /* ------------------------------------------------ colonnes d'une liste */
 
+// Les intitulés reconnus valent aussi en néerlandais et en anglais : les
+// listes de la mission circulent dans les trois langues.
 export const CHAMPS_LISTE = [
   { key: "ignorer", label: "— ignorer —" },
-  { key: "nom", label: "Nom du praticien", alias: ["nom du praticien", "praticien", "dentiste", "nom", "naam"] },
-  { key: "telephone", label: "Téléphone", alias: ["telephone", "tel", "gsm", "nr de telephone", "numero de telephone", "phone"] },
-  { key: "inami", label: "N° INAMI", alias: ["n inami", "inami", "numero inami", "riziv"] },
-  { key: "adresse", label: "Adresse", alias: ["adresse d exercice", "adresse", "rue", "straat"] },
-  { key: "commune", label: "Commune", alias: ["commune", "ville", "localite", "gemeente"] },
-  { key: "cp", label: "Code postal", alias: ["cp", "code postal", "postcode"] },
-  { key: "province", label: "Province", alias: ["province"] },
-  { key: "statut", label: "Statut Inami", alias: ["statut", "statut dentiste inami", "convention"] },
+  {
+    key: "nom",
+    label: "Nom du praticien",
+    alias: ["nom du praticien", "praticien", "dentiste", "nom", "naam", "naam van de beoefenaar", "tandarts", "name", "practitioner", "dentist"],
+  },
+  {
+    key: "telephone",
+    label: "Téléphone",
+    alias: ["telephone", "tel", "gsm", "nr de telephone", "numero de telephone", "telefoon", "telefoonnummer", "phone", "phone number"],
+  },
+  { key: "inami", label: "N° INAMI", alias: ["n inami", "inami", "numero inami", "riziv", "riziv nummer", "inami number"] },
+  { key: "adresse", label: "Adresse", alias: ["adresse d exercice", "adresse", "rue", "straat", "adres", "address"] },
+  { key: "commune", label: "Commune", alias: ["commune", "ville", "localite", "gemeente", "stad", "city", "town"] },
+  { key: "cp", label: "Code postal", alias: ["cp", "code postal", "postcode", "postal code", "zip", "zip code"] },
+  { key: "province", label: "Province", alias: ["province", "provincie"] },
+  { key: "statut", label: "Statut Inami", alias: ["statut", "statut dentiste inami", "convention", "statuut", "riziv statuut", "status"] },
   { key: "site", label: "Site web", alias: ["site web principal", "site web", "site", "website"] },
-  { key: "site2", label: "Autre source", alias: ["source secondaire", "source", "site 2", "autre source"] },
-  { key: "ordre", label: "N° d'ordre", alias: ["n", "no", "num", "numero", "ordre"] },
-  { key: "note", label: "Remarques", alias: ["remarques", "remarque", "note", "notes"] },
+  { key: "site2", label: "Autre source", alias: ["source secondaire", "source", "site 2", "autre source", "andere bron", "other source"] },
+  { key: "ordre", label: "N° d'ordre", alias: ["n", "no", "num", "numero", "ordre", "nr", "number"] },
+  { key: "note", label: "Remarques", alias: ["remarques", "remarque", "note", "notes", "opmerkingen", "remarks"] },
 ];
 
 const ALIAS_LISTE = new Map();

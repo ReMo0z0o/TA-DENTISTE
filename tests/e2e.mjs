@@ -98,7 +98,7 @@ await page.waitForSelector("text=/Au suivant/");
 verifie("appel enregistré et fiche suivante ouverte", true);
 
 console.log("\n4. Historique avec l'heure");
-await page.click("nav:visible >> text=Journée");
+await page.click('[data-role="onglets-mobile"] >> text=Journée');
 // la journée se lit en cartes sur téléphone, en tableau au bureau
 await page.waitForSelector(`li:has-text("${A.premierNom}"):visible`);
 const carte = await page.textContent(`li:has-text("${A.premierNom}"):visible`);
@@ -106,7 +106,7 @@ verifie("heure visible dans l'historique", new RegExp(heure).test(carte), carte.
 verifie("résumé du rendez-vous", carte.includes("12/11/2026"), carte.slice(0, 160));
 
 console.log("\n5. Remplissage du fichier Excel officiel");
-await page.click("nav:visible >> text=Données");
+await page.click('[data-role="onglets-mobile"] >> text=Données');
 await page.waitForSelector("text=Remplir le fichier Excel de Test-Achats");
 await page.setInputFiles('input[accept=".xlsx,.xlsm"]', jeu.modele);
 await page.waitForSelector("text=/première ligne libre/");
@@ -154,7 +154,7 @@ verifie("reprise sur un autre appareil", entete.includes("1 appel"), entete.repl
 console.log("\n7. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
-await page2.click("nav:visible >> text=Liste");
+await page2.click('[data-role="onglets-bureau"] >> text=Liste');
 await page2.waitForTimeout(300);
 await page2.screenshot({ path: path.join(SORTIES, "ecran-bureau.png") });
 await page.screenshot({ path: path.join(SORTIES, "ecran-liste.png") });

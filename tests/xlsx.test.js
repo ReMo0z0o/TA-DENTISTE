@@ -177,3 +177,35 @@ test("une liste de praticiens reste une liste", { skip: !dispo }, async () => {
   const genre = reponses.oui && (reponses.enTete >= 0 || map.enTete < 0) ? "reponses" : "liste";
   assert.equal(genre, "liste");
 });
+
+test("une liste aux intitulés néerlandais est reconnue", () => {
+  const colle = [
+    "Nr;Naam;Riziv-nummer;Adres;Gemeente;Postcode;Telefoon",
+    "1;JANSSENS, PIETER;300111-11;Kerkstraat 4;Gent;9000;+32 9 000 00 01",
+    "2;PEETERS, ANNE;300222-22;Dorpsplein 8;Brugge;8000;+32 50 00 00 02",
+  ].join("\n");
+  const rows = parseDelimited(colle);
+  const { enTete, mapping } = mappingListe(rows);
+  assert.equal(enTete, 0);
+  assert.ok(mapping.includes("nom"));
+  assert.ok(mapping.includes("telephone"));
+  const fiches = prospectsDepuis(rows, mapping, enTete, {});
+  assert.equal(fiches.length, 2);
+  assert.equal(fiches[0].nom, "JANSSENS, PIETER");
+  assert.equal(fiches[0].commune, "Gent");
+  assert.equal(fiches[0].province, "Flandre orientale");
+  assert.equal(fiches[1].province, "Flandre occidentale");
+});
+
+test("une liste aux intitulés anglais est reconnue", () => {
+  const colle = [
+    "No;Practitioner;Address;City;Postcode;Phone",
+    "1;SMITH, JOHN;Main street 1;Antwerp;2000;+32 3 000 00 01",
+  ].join("\n");
+  const rows = parseDelimited(colle);
+  const { enTete, mapping } = mappingListe(rows);
+  assert.equal(enTete, 0);
+  const fiches = prospectsDepuis(rows, mapping, enTete, {});
+  assert.equal(fiches[0].nom, "SMITH, JOHN");
+  assert.equal(fiches[0].province, "Anvers");
+});

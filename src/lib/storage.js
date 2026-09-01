@@ -4,7 +4,7 @@
 const CLE = "ta-dentiste:v1";
 
 const ETAT_VIDE = {
-  reglages: { province: "", statut: "", profil: "standard", afficherTout: false },
+  reglages: { province: "", statut: "", profil: "standard", afficherTout: false, langue: "" },
   prospects: [],
   calls: [],
   brouillon: null,

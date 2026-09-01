@@ -1,6 +1,7 @@
 // Briques d'interface communes : assez grandes pour le pouce sur téléphone,
 // pilotables au clavier au bureau.
 import { useEffect, useState } from "react";
+import { useT } from "../lib/i18n.js";
 
 /** Branche la touche « / » sur un champ de recherche. */
 export function useRaccourciRecherche(ref) {
@@ -29,6 +30,7 @@ export function Label({ children, hint, htmlFor }) {
 }
 
 export function Choice({ label, hint, options, value, onChange, auto }) {
+  const t = useT();
   // les flèches déplacent la sélection dans le groupe : encodage au clavier
   const auClavier = (e) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -61,7 +63,7 @@ export function Choice({ label, hint, options, value, onChange, auto }) {
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 active:bg-slate-100")
               }
             >
-              {o}
+              {t.valeur(o)}
             </button>
           );
         })}
@@ -71,8 +73,9 @@ export function Choice({ label, hint, options, value, onChange, auto }) {
   );
 }
 
-export function AutoHint({ children = "Rempli automatiquement — corrige si besoin." }) {
-  return <div className="mt-1 text-[11.5px] text-teal-700">↳ {children}</div>;
+export function AutoHint({ children }) {
+  const t = useT();
+  return <div className="mt-1 text-[11.5px] text-teal-700">↳ {children || t("Rempli automatiquement — corrige si besoin.")}</div>;
 }
 
 export function Field({
@@ -147,6 +150,7 @@ export function Select({ label, value, onChange, options, hint, compact }) {
  * fichier depuis l'explorateur — c'est le geste naturel au bureau.
  */
 export function ZoneFichier({ accept, onFichier, libelle, aide, ton = "primary" }) {
+  const t = useT();
   const [survol, setSurvol] = useState(false);
   const bouton =
     ton === "primary"
@@ -176,7 +180,7 @@ export function ZoneFichier({ accept, onFichier, libelle, aide, ton = "primary" 
       />
       <div className="pointer-events-none">
         <span className={"inline-block rounded-lg px-4 py-2 text-[14px] font-medium " + bouton}>{libelle}</span>
-        <p className="mt-2 hidden text-[12px] text-slate-500 lg:block">ou glisse le fichier ici</p>
+        <p className="mt-2 hidden text-[12px] text-slate-500 lg:block">{t("ou glisse le fichier ici")}</p>
         {aide && <p className="mt-1 text-[11.5px] text-slate-500">{aide}</p>}
       </div>
     </div>
@@ -255,6 +259,7 @@ export function Vide({ children }) {
 }
 
 export function Tiroir({ ouvert, onClose, titre, children }) {
+  const t = useT();
   if (!ouvert) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 sm:items-center" onClick={onClose}>
@@ -264,8 +269,8 @@ export function Tiroir({ ouvert, onClose, titre, children }) {
       >
         <div className="sticky -top-4 -mx-4 mb-3 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
           <h2 className="text-[15px] font-semibold text-teal-900">{titre}</h2>
-          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-[13px] text-slate-600 active:bg-slate-100">
-            Fermer
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-[13px] text-slate-600 hover:bg-slate-100">
+            {t("Fermer")}
           </button>
         </div>
         {children}

@@ -17,28 +17,29 @@ import {
 } from "../lib/model.js";
 import { visible } from "../lib/regles.js";
 import { nowTime, frDate } from "../lib/dates.js";
-import { PHRASE_OUVERTURE, REPONSES_TYPES } from "../lib/scenario.js";
-
-const lib = (cle) => COLUMN_BY_KEY[cle].label;
+import { scenario } from "../lib/scenario.js";
+import { useT } from "../lib/i18n.js";
 
 function Identite({ call, set, fiche, ouvert, setOuvert }) {
+  const t = useT();
+  const lib = (cle) => t(COLUMN_BY_KEY[cle].label);
   const tel = telHref(call.telephone);
   return (
     <Block
-      title="Le dentiste"
+      title={t("Le dentiste")}
       action={
         <button onClick={() => setOuvert(!ouvert)} className="text-[12px] text-teal-800 underline underline-offset-2">
-          {ouvert ? "Replier" : "Modifier"}
+          {ouvert ? t("Replier") : t("Modifier")}
         </button>
       }
     >
       <div className="mb-3">
         <div className="text-[17px] leading-tight font-semibold text-slate-900">
-          {call.dentiste || <span className="text-slate-400">Nom du dentiste</span>}
+          {call.dentiste || <span className="text-slate-400">{t("Nom du dentiste")}</span>}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-slate-600">
           {call.province && <Puce>{call.province}</Puce>}
-          {call.statut && <Puce tone="teal">{call.statut}</Puce>}
+          {call.statut && <Puce tone="teal">{t.valeur(call.statut)}</Puce>}
           {fiche?.commune && (
             <span>
               {fiche.commune} {fiche.cp}
@@ -55,18 +56,18 @@ function Identite({ call, set, fiche, ouvert, setOuvert }) {
             href={tel}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-teal-800 px-4 py-2.5 text-[15px] font-medium text-white hover:bg-teal-900 active:bg-teal-900 lg:min-h-[38px] lg:py-2 lg:text-[14px]"
           >
-            Appeler {call.telephone}
+            {t("Appeler")} {call.telephone}
           </a>
         ) : (
-          <span className="text-[13px] text-slate-500">Pas de numéro encodé</span>
+          <span className="text-[13px] text-slate-500">{t("Pas de numéro encodé")}</span>
         )}
         {call.telephone && (
           <button
             onClick={() => navigator.clipboard?.writeText(call.telephone).catch(() => {})}
-            title="Copier le numéro"
+            title={t("Copier le numéro")}
             className="hidden min-h-[38px] rounded-lg border border-slate-300 px-3 text-[12.5px] text-slate-600 hover:border-slate-400 lg:inline-flex lg:items-center"
           >
-            Copier
+            {t("Copier")}
           </button>
         )}
         {fiche?.site && (
@@ -85,7 +86,7 @@ function Identite({ call, set, fiche, ouvert, setOuvert }) {
         <div className="mt-4 border-t border-slate-200 pt-3">
           <Choice
             label={lib("statut")}
-            hint="Colonne obligatoire du fichier de réponses."
+            hint={t("Colonne obligatoire du fichier de réponses.")}
             options={STATUTS}
             value={call.statut}
             onChange={set("statut")}
@@ -95,7 +96,12 @@ function Identite({ call, set, fiche, ouvert, setOuvert }) {
 
       {ouvert && (
         <div className="mt-4 border-t border-slate-200 pt-4">
-          <Field label={lib("dentiste")} value={call.dentiste} onChange={set("dentiste")} placeholder="Nom tel qu'il figure dans le fichier" />
+          <Field
+            label={lib("dentiste")}
+            value={call.dentiste}
+            onChange={set("dentiste")}
+            placeholder={t("Nom tel qu'il figure dans le fichier")}
+          />
           <div className="grid gap-x-3 sm:grid-cols-2">
             <Field label={lib("province")} value={call.province} onChange={set("province")} list="liste-provinces" />
             <Field label={lib("telephone")} value={call.telephone} onChange={set("telephone")} inputMode="tel" />
@@ -114,10 +120,11 @@ function Identite({ call, set, fiche, ouvert, setOuvert }) {
 
 /** Les réponses types : dépliables sur petit écran, toujours visibles au bureau. */
 function ReponsesTypes({ compact }) {
+  const t = useT();
   const [ouvert, setOuvert] = useState(false);
   const liste = (
     <dl className="mt-2 space-y-2">
-      {REPONSES_TYPES.map((item) => (
+      {scenario(t.langue).reponses.map((item) => (
         <div key={item.q} className="text-[12.5px] leading-snug">
           <dt className="text-slate-600">{item.q}</dt>
           <dd className="font-medium text-teal-900">{item.r}</dd>
@@ -133,7 +140,7 @@ function ReponsesTypes({ compact }) {
         onClick={() => setOuvert(!ouvert)}
         className="mt-2 text-[12px] font-medium text-teal-800 underline underline-offset-2"
       >
-        {ouvert ? "Masquer les réponses types" : "Réponses aux questions du secrétariat"}
+        {ouvert ? t("Masquer les réponses types") : t("Réponses aux questions du secrétariat")}
       </button>
       {ouvert && liste}
     </>
@@ -141,10 +148,11 @@ function ReponsesTypes({ compact }) {
 }
 
 function FileAttente({ fiches, onOuvrir }) {
+  const t = useT();
   if (!fiches.length) return null;
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
-      <h2 className="mb-2 text-[12px] font-semibold tracking-wide text-slate-600 uppercase">Ensuite</h2>
+      <h2 className="mb-2 text-[12px] font-semibold tracking-wide text-slate-600 uppercase">{t("Ensuite")}</h2>
       <ul className="max-h-[38vh] space-y-1 overflow-y-auto">
         {fiches.slice(0, 8).map((f) => (
           <li key={f.id}>
@@ -161,7 +169,7 @@ function FileAttente({ fiches, onOuvrir }) {
         ))}
       </ul>
       {fiches.length > 8 && (
-        <p className="mt-2 px-2 text-[11.5px] text-slate-400">+ {fiches.length - 8} autres dans la liste</p>
+        <p className="mt-2 px-2 text-[11.5px] text-slate-400">{t("+ {n} autres dans la liste", { n: fiches.length - 8 })}</p>
       )}
     </div>
   );
@@ -182,6 +190,8 @@ export default function AppelScreen({
   fileAttente = [],
   onOuvrirFiche,
 }) {
+  const t = useT();
+  const lib = (cle) => t(COLUMN_BY_KEY[cle].label);
   const [identiteOuverte, setIdentiteOuverte] = useState(!call.dentiste);
   const montre = (cle) => visible(call, cle, afficherTout);
   const manquants = champsManquants(call);
@@ -195,30 +205,32 @@ export default function AppelScreen({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-white p-3">
             <div>
               <div className="text-[11.5px] font-semibold tracking-wide text-slate-500 uppercase">
-                Prochain praticien à appeler
+                {t("Prochain praticien à appeler")}
               </div>
               <div className="text-[15px] font-medium text-slate-900">{fileAttente[0].nom}</div>
               <div className="text-[12px] text-slate-500">
                 {[fileAttente[0].commune, fileAttente[0].telephone].filter(Boolean).join(" · ")}
               </div>
             </div>
-            <Bouton onClick={() => onOuvrirFiche(fileAttente[0])}>Ouvrir sa fiche</Bouton>
+            <Bouton onClick={() => onOuvrirFiche(fileAttente[0])}>{t("Ouvrir sa fiche")}</Bouton>
           </div>
         )}
 
         {parent && (
           <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900">
-            <strong>Scénario C — dentiste Y.</strong> Cette fiche est rattachée à{" "}
-            <strong>{parent.dentiste || "le dentiste X"}</strong> : à l'export, elle sera placée juste après lui et
-            surlignée en jaune.
+            <strong>{t("Scénario C — dentiste Y.")}</strong>{" "}
+            {t("Cette fiche est rattachée à {nom} : à l'export, elle sera placée juste après lui et surlignée en jaune.", {
+              nom: parent.dentiste || t("le dentiste X"),
+            })}
           </div>
         )}
 
         {doublon && (
           <div className="mb-3 rounded-xl border border-red-300 bg-red-50 p-3 text-[13px] text-red-800">
-            Ce numéro a déjà été appelé (<strong>{doublon.dentiste}</strong>
-            {doublon.dateAppel ? ` le ${frDate(doublon.dateAppel)}` : ""}). Le scénario demande de ne pas appeler deux
-            fois le même cabinet.
+            {t("Ce numéro a déjà été appelé ({nom}{quand}). Le scénario demande de ne pas appeler deux fois le même cabinet.", {
+              nom: doublon.dentiste,
+              quand: doublon.dateAppel ? t(" le {date}", { date: frDate(doublon.dateAppel) }) : "",
+            })}
           </div>
         )}
 
@@ -226,28 +238,28 @@ export default function AppelScreen({
 
         {/* la même aide passe dans la colonne de droite sur grand écran */}
         <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50/60 p-3 xl:hidden">
-          <div className="text-[13px] leading-snug text-teal-900 italic">« {PHRASE_OUVERTURE} »</div>
+          <div className="text-[13px] leading-snug text-teal-900 italic">« {scenario(t.langue).ouverture} »</div>
           <ReponsesTypes compact />
         </div>
 
-        <Block title="Quand">
+        <Block title={t("Quand")}>
           <div className="grid gap-x-3 sm:grid-cols-2">
             <Field label={lib("dateAppel")} type="date" value={call.dateAppel} onChange={set("dateAppel")} />
             <Field
-              label="Heure de l'appel"
+              label={t("Heure de l'appel")}
               type="time"
               value={call.heureAppel}
               onChange={set("heureAppel")}
               suffix={
                 <Bouton variant="ghost" className="shrink-0" onClick={() => set("heureAppel")(nowTime())}>
-                  Maintenant
+                  {t("Maintenant")}
                 </Bouton>
               }
             />
           </div>
         </Block>
 
-        <Block title="Questions posées par le cabinet">
+        <Block title={t("Questions posées par le cabinet")}>
           <div className="lg:grid lg:grid-cols-2 lg:gap-x-6">
             <Choice
               label={lib("interventionMajoree")}
@@ -264,12 +276,12 @@ export default function AppelScreen({
           </div>
           {besoinRappel(call) && (
             <div className="rounded-lg bg-amber-100 px-3 py-2 text-[12.5px] text-amber-900">
-              À rappeler le lendemain avec le profil « intervention majorée ». La fiche apparaîtra dans l'onglet Suivi.
+              {t("À rappeler le lendemain avec le profil « intervention majorée ». La fiche apparaîtra dans l'onglet Suivi.")}
             </div>
           )}
         </Block>
 
-        <Block title="Résultat de l'appel" tone={rdvOui ? "yes" : rdvNon ? "no" : "plain"}>
+        <Block title={t("Résultat de l'appel")} tone={rdvOui ? "yes" : rdvNon ? "no" : "plain"}>
           <Choice label={lib("rdvPossible")} options={OUI_NON} value={call.rdvPossible} onChange={set("rdvPossible")} />
 
           {montre("raison") && (
@@ -277,16 +289,16 @@ export default function AppelScreen({
               <Choice label={lib("raison")} options={RAISONS} value={call.raison} onChange={set("raison")} />
               {montre("raisonPrecision") && (
                 <Field
-                  label="Préciser"
+                  label={t("Préciser")}
                   value={call.raisonPrecision}
                   onChange={set("raisonPrecision")}
-                  placeholder="Ce que le cabinet a répondu"
+                  placeholder={t("Ce que le cabinet a répondu")}
                 />
               )}
               <div className="lg:grid lg:grid-cols-2 lg:gap-x-6">
                 <Choice
                   label={lib("orienteMemePratique")}
-                  hint="Si oui : encoder aussi ce dentiste Y (bouton en bas de page)."
+                  hint={t("Si oui : encoder aussi ce dentiste Y (bouton en bas de page).")}
                   options={OUI_NON}
                   value={call.orienteMemePratique}
                   onChange={set("orienteMemePratique")}
@@ -307,11 +319,11 @@ export default function AppelScreen({
                 <Field label={lib("datePremierRdv")} type="date" value={call.datePremierRdv} onChange={set("datePremierRdv")} />
                 <Field
                   label={lib("prix")}
-                  hint="Le chiffre seul, même approximatif."
+                  hint={t("Le chiffre seul, même approximatif.")}
                   value={call.prix}
                   onChange={set("prix")}
                   inputMode="decimal"
-                  placeholder="ex. 45"
+                  placeholder={t("ex. 45")}
                 />
               </div>
               <Choice
@@ -323,7 +335,7 @@ export default function AppelScreen({
               <Choice label={lib("infoPrix")} options={INFO_PRIX} value={call.infoPrix} onChange={set("infoPrix")} />
               <Choice
                 label={lib("rdvSansSupplement")}
-                hint="Si le premier rendez-vous est déjà au tarif officiel : oui."
+                hint={t("Si le premier rendez-vous est déjà au tarif officiel : oui.")}
                 options={SANS_SUPP}
                 value={call.rdvSansSupplement}
                 onChange={set("rdvSansSupplement")}
@@ -357,7 +369,7 @@ export default function AppelScreen({
           )}
         </Block>
 
-        <Block title="Hygiéniste bucco-dentaire">
+        <Block title={t("Hygiéniste bucco-dentaire")}>
           <Choice label={lib("hygieniste")} options={OUI_NON} value={call.hygieniste} onChange={set("hygieniste")} />
           {montre("infoRemboursement") && (
             <Choice
@@ -378,25 +390,31 @@ export default function AppelScreen({
         </Block>
 
         <Block>
-          <Area label={lib("remarques")} value={call.remarques} onChange={set("remarques")} placeholder="Ce que tu veux retenir de l'appel" />
+          <Area
+            label={lib("remarques")}
+            value={call.remarques}
+            onChange={set("remarques")}
+            placeholder={t("Ce que tu veux retenir de l'appel")}
+          />
           <Case checked={afficherTout} onChange={setAfficherTout}>
-            Afficher toutes les colonnes, même celles qui ne s'appliquent pas
+            {t("Afficher toutes les colonnes, même celles qui ne s'appliquent pas")}
           </Case>
           {manquants.length > 0 && (
             <div className="text-[12px] text-slate-500">
-              Encore vide : {manquants.join(" · ")}. Laisse vide si tu n'es pas sûr — c'est ce que demande le scénario.
+              {t("Encore vide : {champs}. Laisse vide si tu n'es pas sûr — c'est ce que demande le scénario.", {
+                champs: manquants.map((m) => t(m)).join(" · "),
+              })}
             </div>
           )}
         </Block>
 
         {!parent && (
-          <Block title="Pratique de groupe">
+          <Block title={t("Pratique de groupe")}>
             <p className="mb-3 text-[13px] text-slate-600">
-              Le cabinet a proposé un autre dentiste de la même pratique ? Enregistre d'abord cette fiche, puis encode
-              le dentiste Y : il sera exporté juste en dessous, surligné.
+              {t("Le cabinet a proposé un autre dentiste de la même pratique ? Enregistre d'abord cette fiche, puis encode le dentiste Y : il sera exporté juste en dessous, surligné.")}
             </p>
             <Bouton variant="ghost" onClick={onDentisteY} className="w-full lg:w-auto">
-              Enregistrer et encoder le dentiste Y
+              {t("Enregistrer et encoder le dentiste Y")}
             </Bouton>
           </Block>
         )}
@@ -407,15 +425,15 @@ export default function AppelScreen({
         >
           <div className="mx-auto flex max-w-2xl items-center gap-2 lg:max-w-none">
             <Bouton onClick={onSave} className="flex-1 lg:flex-none">
-              {editing ? "Mettre à jour l'appel" : "Enregistrer et passer au suivant"}
+              {editing ? t("Mettre à jour l'appel") : t("Enregistrer et passer au suivant")}
             </Bouton>
             <span className="hidden text-[11.5px] text-slate-400 lg:inline">
               <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">Ctrl</kbd> +{" "}
-              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">Entrée</kbd>
+              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">{t("Entrée")}</kbd>
             </span>
             {editing && (
               <Bouton variant="ghost" onClick={onCancel} className="lg:ml-auto">
-                Annuler
+                {t("Annuler")}
               </Bouton>
             )}
           </div>
@@ -425,10 +443,10 @@ export default function AppelScreen({
       {/* colonne d'appoint : visible seulement quand l'écran est assez large */}
       <aside className="hidden xl:sticky xl:top-6 xl:block xl:space-y-4">
         <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-3">
-          <h2 className="mb-1 text-[12px] font-semibold tracking-wide text-teal-700 uppercase">Ouverture</h2>
-          <p className="text-[13px] leading-snug text-teal-900 italic">« {PHRASE_OUVERTURE} »</p>
+          <h2 className="mb-1 text-[12px] font-semibold tracking-wide text-teal-700 uppercase">{t("Ouverture")}</h2>
+          <p className="text-[13px] leading-snug text-teal-900 italic">« {scenario(t.langue).ouverture} »</p>
           <div className="mt-3 border-t border-teal-200 pt-2">
-            <h2 className="text-[12px] font-semibold tracking-wide text-teal-700 uppercase">Réponses types</h2>
+            <h2 className="text-[12px] font-semibold tracking-wide text-teal-700 uppercase">{t("Réponses types")}</h2>
             <ReponsesTypes />
           </div>
         </div>

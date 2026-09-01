@@ -11,6 +11,7 @@ import { besoinRappel, emptyCall, phoneKey, rdvPris } from "./lib/model.js";
 import { applique, majAnnulation } from "./lib/regles.js";
 import { charge, enregistre, etatVide, nouvelId } from "./lib/storage.js";
 import { nowTime, today } from "./lib/dates.js";
+import { CODES_LANGUE, FournisseurLangue, LANGUES, creeTraducteur, langueParDefaut } from "./lib/i18n.js";
 
 const ONGLETS = [
   ["liste", "Liste", "Qui reste à appeler"],
@@ -19,6 +20,35 @@ const ONGLETS = [
   ["suivi", "Suivi", "Rappels et annulations"],
   ["donnees", "Données", "Import, Excel, sauvegarde"],
 ];
+
+/** Choix de la langue — l'affichage seulement : les données restent en français. */
+function ChoixLangue({ langue, onChange, t }) {
+  return (
+    <div>
+      <div className="flex gap-1">
+        {LANGUES.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => onChange(l.code)}
+            aria-pressed={langue === l.code}
+            title={l.nom}
+            className={
+              "flex-1 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-colors " +
+              (langue === l.code
+                ? "bg-teal-800 text-white"
+                : "border border-slate-300 bg-white text-slate-600 hover:border-slate-400")
+            }
+          >
+            {l.court}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1.5 text-[11px] leading-snug text-slate-400">
+        {t("Les réponses partent en français dans le fichier Excel, quelle que soit la langue choisie.")}
+      </p>
+    </div>
+  );
+}
 
 export default function App() {
   const [etat, setEtat] = useState(null);
@@ -30,12 +60,15 @@ export default function App() {
   const [raccourcis, setRaccourcis] = useState(false);
   const [alerte, setAlerte] = useState("");
   const minuteur = useRef(null);
+  const langue = CODES_LANGUE.includes(etat?.reglages?.langue) ? etat.reglages.langue : "fr";
+  const t = useMemo(() => creeTraducteur(langue), [langue]);
   // les raccourcis clavier sont posés une fois, mais doivent appeler les
   // fonctions du rendu courant
   const actions = useRef({});
 
   useEffect(() => {
     const charge0 = charge();
+    if (!CODES_LANGUE.includes(charge0.reglages.langue)) charge0.reglages.langue = langueParDefaut();
     setEtat(charge0);
     if (charge0.brouillon) setCall({ ...emptyCall(), ...charge0.brouillon });
     if (charge0.prospects.length === 0 && charge0.calls.length === 0) setOnglet("donnees");
@@ -52,6 +85,12 @@ export default function App() {
     }, 400);
     return () => clearTimeout(minuteur.current);
   }, [etat, call]);
+
+  useEffect(() => {
+    document.documentElement.lang = langue;
+    // un message affiché dans l'ancienne langue n'aurait plus de sens
+    setMessage("");
+  }, [langue]);
 
   useEffect(() => {
     const auClavier = (e) => {
@@ -115,7 +154,7 @@ export default function App() {
     return etat.calls.find((c) => c.id !== editing && !c.roleY && phoneKey(c.telephone) === cle) || null;
   }, [etat, call.telephone, editing]);
 
-  if (!etat) return <div className="p-6 text-sm text-slate-500">Chargement…</div>;
+  if (!etat) return <div className="p-6 text-sm text-slate-500">{t("Chargement…")}</div>;
 
   const ouvreAppel = (fiche) => {
     const existant = etat.calls.find((c) => c.prospectId === fiche.id);
@@ -146,7 +185,7 @@ export default function App() {
   /** Enregistre l'appel en cours et renvoie l'appel enregistré. */
   const enregistreAppel = () => {
     if (!call.dentiste.trim()) {
-      flash("Indique au moins le nom du dentiste avant d'enregistrer.");
+      flash(t("Indique au moins le nom du dentiste avant d'enregistrer."));
       return null;
     }
     const complet = majAnnulation({
@@ -171,7 +210,7 @@ export default function App() {
     setEditing(null);
     if (suivante) {
       ouvreAppel(suivante);
-      flash(`Appel enregistré. Au suivant : ${suivante.nom}.`);
+      flash(t("Appel enregistré. Au suivant : {nom}.", { nom: suivante.nom }));
     } else {
       setCall(
         emptyCall({
@@ -181,7 +220,7 @@ export default function App() {
           heureAppel: nowTime(),
         })
       );
-      flash("Appel enregistré.");
+      flash(t("Appel enregistré."));
       window.scrollTo({ top: 0 });
     }
   };
@@ -203,7 +242,7 @@ export default function App() {
     setEditing(null);
     setOnglet("appel");
     window.scrollTo({ top: 0 });
-    flash("Encode maintenant le dentiste Y proposé par le cabinet.");
+    flash(t("Encode maintenant le dentiste Y proposé par le cabinet."));
   };
 
   const editeAppel = (c) => {
@@ -217,13 +256,13 @@ export default function App() {
     majEtat((e) => ({ calls: e.calls.map((c) => (c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c)) }));
 
   const supprimeAppel = (id) => {
-    if (!window.confirm("Supprimer définitivement cet appel ?")) return;
+    if (!window.confirm(t("Supprimer définitivement cet appel ?"))) return;
     majEtat((e) => ({ calls: e.calls.filter((c) => c.id !== id && c.groupeDe !== id) }));
     if (editing === id) {
       setEditing(null);
       setCall(emptyCall());
     }
-    flash("Appel supprimé.");
+    flash(t("Appel supprimé."));
   };
 
   const ajouteProspects = (fiches) => {
@@ -232,13 +271,13 @@ export default function App() {
       const nouveaux = fiches.filter((f) => !connus.has(`${f.nom}|${phoneKey(f.telephone)}`));
       return { prospects: [...e.prospects, ...nouveaux] };
     });
-    flash(`${fiches.length} praticiens lus. Ouvre l'onglet « Liste » : il n'y a plus qu'à appeler.`);
+    flash(t("{n} praticiens lus. Ouvre l'onglet « Liste » : il n'y a plus qu'à appeler.", { n: fiches.length }));
     setOnglet("liste");
   };
 
   const ajouteCalls = (appels) => {
     majEtat((e) => ({ calls: [...e.calls, ...appels] }));
-    flash(`${appels.length} appels importés.`);
+    flash(t("{n} appels importés.", { n: appels.length }));
     setOnglet("journee");
   };
 
@@ -246,12 +285,15 @@ export default function App() {
     const prospects = Array.isArray(data?.prospects) ? data.prospects : [];
     const calls = Array.isArray(data?.calls) ? data.calls : Array.isArray(data) ? data : [];
     if (!prospects.length && !calls.length) {
-      flash("Cette sauvegarde ne contient ni liste d'appel ni appel.");
+      flash(t("Cette sauvegarde ne contient ni liste d'appel ni appel."));
       return;
     }
     const remplacer = window.confirm(
-      `Sauvegarde : ${prospects.length} praticiens et ${calls.length} appels.\n\n` +
-        "OK = remplacer ce qu'il y a sur cet appareil\nAnnuler = compléter sans rien effacer"
+      t("Sauvegarde : {p} praticiens et {c} appels.", { p: prospects.length, c: calls.length }) +
+        "\n\n" +
+        t("OK = remplacer ce qu'il y a sur cet appareil") +
+        "\n" +
+        t("Annuler = compléter sans rien effacer")
     );
     majEtat((e) => {
       if (remplacer) {
@@ -269,7 +311,7 @@ export default function App() {
         calls: [...e.calls, ...calls.filter((c) => !idsCalls.has(c.id)).map((c) => ({ ...emptyCall(), ...c }))],
       };
     });
-    flash(remplacer ? "Sauvegarde chargée." : "Sauvegarde ajoutée à ce qui existait déjà.");
+    flash(remplacer ? t("Sauvegarde chargée.") : t("Sauvegarde ajoutée à ce qui existait déjà."));
   };
 
   actions.current = { enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null) };
@@ -293,9 +335,9 @@ export default function App() {
           onSupprimer={(id) => majEtat((e) => ({ prospects: e.prospects.filter((p) => p.id !== id) }))}
           onImporter={() => setOnglet("donnees")}
           onVider={() => {
-            if (window.confirm("Vider la liste d'appel ? Les appels déjà encodés sont conservés.")) {
+            if (window.confirm(t("Vider la liste d'appel ? Les appels déjà encodés sont conservés."))) {
               majEtat({ prospects: [] });
-              flash("Liste d'appel vidée.");
+              flash(t("Liste d'appel vidée."));
             }
           }}
           flash={flash}
@@ -354,19 +396,19 @@ export default function App() {
           onSauvegarde={chargeSauvegarde}
           flash={flash}
           onViderAppels={() => {
-            if (window.confirm("Vider les appels encodés ? À faire seulement après avoir rempli le fichier Excel.")) {
+            if (window.confirm(t("Vider les appels encodés ? À faire seulement après avoir rempli le fichier Excel."))) {
               majEtat({ calls: [] });
               setCall(emptyCall());
               setEditing(null);
-              flash("Appels vidés.");
+              flash(t("Appels vidés."));
             }
           }}
           onToutEffacer={() => {
-            if (window.confirm("Tout effacer : liste d'appel, appels et suivi. Cette action est définitive.")) {
-              setEtat(etatVide());
+            if (window.confirm(t("Tout effacer : liste d'appel, appels et suivi. Cette action est définitive."))) {
+              setEtat({ ...etatVide(), reglages: { ...etatVide().reglages, langue } });
               setCall(emptyCall());
               setEditing(null);
-              flash("Application remise à zéro.");
+              flash(t("Application remise à zéro."));
             }
           }}
         />
@@ -374,16 +416,19 @@ export default function App() {
     </>
   );
 
+  const changeLangue = (code) => majEtat((e) => ({ reglages: { ...e.reglages, langue: code } }));
+
   return (
+    <FournisseurLangue value={t}>
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* barre latérale : sur ordinateur, la navigation reste visible en permanence */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-slate-200 bg-white lg:flex xl:w-64">
         <div className="border-b border-slate-200 px-4 py-4">
-          <h1 className="text-[16px] leading-tight font-semibold text-teal-900">Appels dentistes</h1>
-          <p className="text-[11.5px] text-slate-500">Mystery shopping · Test-Achats</p>
+          <h1 className="text-[16px] leading-tight font-semibold text-teal-900">{t("Appels dentistes")}</h1>
+          <p className="text-[11.5px] text-slate-500">{t("Mystery shopping · Test-Achats")}</p>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-2">
+        <nav data-role="onglets-bureau" className="flex-1 overflow-y-auto p-2">
           {ONGLETS.map(([cle, libelle, aide], i) => {
             const actif = onglet === cle;
             return (
@@ -396,8 +441,8 @@ export default function App() {
                 }
               >
                 <span className="flex-1">
-                  <span className="block text-[13.5px] font-medium">{libelle}</span>
-                  <span className={"block text-[11px] " + (actif ? "text-teal-100" : "text-slate-500")}>{aide}</span>
+                  <span className="block text-[13.5px] font-medium">{t(libelle)}</span>
+                  <span className={"block text-[11px] " + (actif ? "text-teal-100" : "text-slate-500")}>{t(aide)}</span>
                 </span>
                 {badges[cle] > 0 && (
                   <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-medium text-white">{badges[cle]}</span>
@@ -412,9 +457,9 @@ export default function App() {
           <div className="border-t border-slate-200 px-4 py-3">
             <div className="flex items-baseline justify-between text-[12px]">
               <span className="font-medium text-slate-700">
-                {faits} / {etat.prospects.length} appelés
+                {t("{faits} / {total} appelés", { faits, total: etat.prospects.length })}
               </span>
-              <span className="text-slate-500">{prochaines.length} restants</span>
+              <span className="text-slate-500">{t("{n} restants", { n: prochaines.length })}</span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
               <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${pourcent}%` }} />
@@ -427,14 +472,17 @@ export default function App() {
             onClick={() => setScenario(true)}
             className="mb-1 w-full rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800 hover:bg-teal-50"
           >
-            Scénario de la mission
+            {t("Scénario de la mission")}
           </button>
           <button
             onClick={() => setRaccourcis(true)}
-            className="w-full rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-100"
+            className="mb-2 w-full rounded-lg px-3 py-1.5 text-[12px] text-slate-500 hover:bg-slate-100"
           >
-            Raccourcis clavier <kbd className="font-sans text-slate-400">?</kbd>
+            {t("Raccourcis clavier")} <kbd className="font-sans text-slate-400">?</kbd>
           </button>
+          <div className="px-1">
+            <ChoixLangue langue={langue} onChange={changeLangue} t={t} />
+          </div>
         </div>
       </aside>
 
@@ -442,27 +490,41 @@ export default function App() {
         <div className="mx-auto w-full max-w-2xl px-4 pt-4 pb-[76px] lg:max-w-[1180px] lg:px-6 lg:pt-6 lg:pb-10">
           {/* en-tête compacte, remplacée par la barre latérale sur ordinateur */}
           <header className="mb-3 flex items-center justify-between gap-3 lg:hidden">
-            <div>
-              <h1 className="text-[17px] leading-tight font-semibold text-teal-900">Appels dentistes</h1>
-              <p className="text-[12px] text-slate-500">
-                {etat.calls.length} appel{etat.calls.length > 1 ? "s" : ""} encodé{etat.calls.length > 1 ? "s" : ""}
-                {etat.prospects.length ? ` · ${prochaines.length} à appeler` : ""}
+            <div className="min-w-0">
+              <h1 className="text-[17px] leading-tight font-semibold text-teal-900">{t("Appels dentistes")}</h1>
+              <p className="truncate text-[12px] text-slate-500">
+                {t.n(etat.calls.length, "{n} appel encodé", "{n} appels encodés")}
+                {etat.prospects.length ? ` · ${t("{n} à appeler", { n: prochaines.length })}` : ""}
               </p>
             </div>
-            <button
-              onClick={() => setScenario(true)}
-              className="min-h-[40px] rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800"
-            >
-              Scénario
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <select
+                value={langue}
+                onChange={(e) => changeLangue(e.target.value)}
+                aria-label={t("Langue")}
+                className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 text-[12px] font-medium text-slate-700"
+              >
+                {LANGUES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.court}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setScenario(true)}
+                className="min-h-[40px] rounded-lg border border-teal-800 px-3 py-2 text-[13px] font-medium text-teal-800"
+              >
+                {t("Scénario")}
+              </button>
+            </div>
           </header>
 
           <div className="mb-3 hidden items-baseline justify-between lg:flex">
             <h2 className="text-[19px] font-semibold text-slate-900">
-              {ONGLETS.find(([c]) => c === onglet)?.[1]}
+              {t(ONGLETS.find(([c]) => c === onglet)?.[1] || "")}
             </h2>
             <p className="text-[12.5px] text-slate-500">
-              {etat.calls.length} appel{etat.calls.length > 1 ? "s" : ""} encodé{etat.calls.length > 1 ? "s" : ""}
+              {t.n(etat.calls.length, "{n} appel encodé", "{n} appels encodés")}
             </p>
           </div>
 
@@ -479,6 +541,7 @@ export default function App() {
 
       {/* navigation du bas : téléphone uniquement */}
       <nav
+        data-role="onglets-mobile"
         className="fixed right-0 bottom-0 left-0 z-40 border-t border-slate-200 bg-white lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -492,7 +555,7 @@ export default function App() {
               }
             >
               {onglet === cle && <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-teal-800" />}
-              {libelle}
+              {t(libelle)}
               {badges[cle] > 0 && (
                 <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{badges[cle]}</span>
               )}
@@ -501,12 +564,13 @@ export default function App() {
         </div>
       </nav>
 
-      <Tiroir ouvert={scenario} onClose={() => setScenario(false)} titre="Scénario de la mission">
+      <Tiroir ouvert={scenario} onClose={() => setScenario(false)} titre={t("Scénario de la mission")}>
         <ScenarioSheet />
       </Tiroir>
-      <Tiroir ouvert={raccourcis} onClose={() => setRaccourcis(false)} titre="Raccourcis clavier">
+      <Tiroir ouvert={raccourcis} onClose={() => setRaccourcis(false)} titre={t("Raccourcis clavier")}>
         <RaccourcisSheet />
       </Tiroir>
     </div>
+    </FournisseurLangue>
   );
 }

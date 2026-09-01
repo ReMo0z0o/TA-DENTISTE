@@ -43,6 +43,25 @@ et le clavier :
 **Sur téléphone** — barre d'onglets en bas, cartes tactiles, cibles de 44 px,
 bouton d'appel qui compose directement le numéro.
 
+### Langue de l'interface
+
+Français, néerlandais, anglais — au choix dans la barre latérale (au bureau) ou
+dans l'en-tête (sur téléphone). Tout suit : navigation, formulaire, tableaux,
+messages, dates en toutes lettres, et le **scénario complet**, phrases à dire au
+téléphone comprises — utile pour un cabinet néerlandophone.
+
+**Ce qui ne change jamais : les données.** Les réponses sont enregistrées et
+exportées dans les termes exacts qu'attend le fichier de Test-Achats
+(« conventionné », « oui », « avec supplément »…), quelle que soit la langue
+affichée. Choisir le néerlandais fait afficher « ja », mais c'est bien « oui »
+qui part dans la colonne — sinon les listes déroulantes du fichier officiel ne
+reconnaîtraient plus rien. Un test vérifie cette règle à chaque exécution.
+
+Le choix est mémorisé sur l'appareil. Au premier lancement, l'application suit la
+langue du navigateur si elle en connaît une. Les listes d'appel sont aussi
+reconnues avec des intitulés néerlandais ou anglais (`Naam`, `Telefoon`,
+`Postcode`, `Practitioner`, `Phone`…).
+
 ### Raccourcis clavier
 
 | Touches | Effet |
@@ -164,7 +183,8 @@ seule feuille de calcul en recopiant toutes les autres pièces du classeur
 telles quelles — d'où la conservation des listes déroulantes.
 
 ```
-src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, export
+src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, export,
+              i18n + traductions (fr / nl / en), scénario dans les trois langues
 src/screens/  Liste · Appel · Journée · Suivi · Données
 src/components/ briques d'interface, panneau d'import, scénario, raccourcis
 docs/         l'application construite, en un seul fichier
@@ -181,12 +201,19 @@ npm test           # tests unitaires (Node)
 npm run test:e2e   # deux parcours complets dans Chromium : téléphone puis bureau
 ```
 
+Côté traduction, les tests refusent toute clé sans traduction, toute traduction
+devenue inutile, toute variable `{n}` perdue en route — et vérifient qu'un export
+reste français en néerlandais comme en anglais.
+
 Les tests utilisent les vrais fichiers de la mission, dans `tests/fixtures/` :
 `liste.xlsx` (liste d'appel du Hainaut) et `modele.xlsx` (Antwoordtabel).
 
 ### Limites connues
 
 - Le calcul « 4 jours ouvrables » saute les week-ends, pas les jours fériés.
+- L'export vise le fichier de réponses **français**. Pour un Antwoordtabel
+  néerlandais, il faudrait ajouter la correspondance des valeurs (une table à
+  écrire, le fichier néerlandais sous la main).
 - La lecture des `.xlsx` demande un navigateur récent (Chrome/Edge 103+,
   Safari 16.4+, Firefox 113+) ; le `.csv` et le collage fonctionnent partout.
 - Les données vivent dans le navigateur de l'appareil : vider les données du site

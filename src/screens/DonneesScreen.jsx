@@ -15,6 +15,7 @@ import {
 } from "../lib/exporters.js";
 import { besoinRappel, ordreExport, rdvPris } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
+import { useT } from "../lib/i18n.js";
 
 function csvSuivi(calls) {
   const cell = (v) => {
@@ -71,6 +72,7 @@ export default function DonneesScreen({
   onToutEffacer,
   flash,
 }) {
+  const t = useT();
   const [avecEnTete, setAvecEnTete] = useState(false);
   const [modele, setModele] = useState(null); // { nom, buffer, depart }
   const [remplissage, setRemplissage] = useState(false);
@@ -82,9 +84,9 @@ export default function DonneesScreen({
       const buffer = await file.arrayBuffer();
       const depart = await templateFirstFreeRow(buffer);
       setModele({ nom: file.name, buffer, depart: String(depart) });
-      flash(`Modèle chargé : première ligne libre = ligne ${depart}.`);
+      flash(t("Modèle chargé : première ligne libre = ligne {n}.", { n: depart }));
     } catch (err) {
-      flash(err.message || "Ce fichier Excel n'a pas pu être lu.");
+      flash(err.message || t("Ce fichier Excel n'a pas pu être lu."));
     }
   };
 
@@ -97,11 +99,14 @@ export default function DonneesScreen({
       const ok = telecharger(modele.nom.replace(/\.xlsx?$/i, "") + `-rempli-${calls.length}-appels.xlsx`, blob);
       flash(
         ok
-          ? `${calls.length} appels écrits à partir de la ligne ${depart}. Vérifie le fichier avant de l'envoyer.`
-          : "Téléchargement refusé par le navigateur — utilise le collage pour Excel."
+          ? t("{n} appels écrits à partir de la ligne {ligne}. Vérifie le fichier avant de l'envoyer.", {
+              n: calls.length,
+              ligne: depart,
+            })
+          : t("Téléchargement refusé par le navigateur — utilise le collage pour Excel.")
       );
     } catch (err) {
-      flash(err.message || "Le remplissage a échoué : utilise le collage pour Excel.");
+      flash(err.message || t("Le remplissage a échoué : utilise le collage pour Excel."));
     }
     setRemplissage(false);
   };
@@ -110,9 +115,9 @@ export default function DonneesScreen({
     const texte = tsv(calls, avecEnTete);
     try {
       await navigator.clipboard.writeText(texte);
-      flash("Copié. Colle dans la première cellule vide de la colonne A.");
+      flash(t("Copié. Colle dans la première cellule vide de la colonne A."));
     } catch {
-      flash("Copie automatique refusée — sélectionne le texte ci-dessous à la main.");
+      flash(t("Copie automatique refusée — sélectionne le texte ci-dessous à la main."));
     }
   };
 
@@ -121,50 +126,52 @@ export default function DonneesScreen({
       {/* à gauche ce qui entre dans l'application, à droite ce qui en sort */}
       <div>
         <ImportPanel onProspects={onProspects} onCalls={onCalls} onSauvegarde={onSauvegarde} flash={flash} />
-        {vide && <Vide>Aucun appel encodé pour l'instant : les exports seront vides.</Vide>}
+        {vide && <Vide>{t("Aucun appel encodé pour l'instant : les exports seront vides.")}</Vide>}
       </div>
 
       <div>
-      <Block title="Remplir le fichier Excel de Test-Achats">
+      <Block title={t("Remplir le fichier Excel de Test-Achats")}>
         <p className="mb-3 text-[13px] text-slate-600">
-          Charge ici le fichier <strong>Antwoordtabel</strong> que tu dois rendre : l'application y ajoute
-          {calls.length ? ` tes ${calls.length} appel${calls.length > 1 ? "s" : ""}` : " tes appels"} en gardant les
-          titres, les listes déroulantes et la mise en forme, puis te rend le fichier complété.
+          {t("Charge ici le fichier Antwoordtabel que tu dois rendre : l'application y ajoute tes appels en gardant les titres, les listes déroulantes et la mise en forme, puis te rend le fichier complété.")}
+        </p>
+        <p className="mb-3 rounded-lg bg-slate-100 px-3 py-2 text-[12px] text-slate-600">
+          {t("Le fichier reste en français : les réponses y sont écrites telles que Test-Achats les attend, quelle que soit la langue de l'application.")}
         </p>
         <ZoneFichier
           accept=".xlsx,.xlsm"
           onFichier={chargeModele}
-          libelle={modele ? "Changer de fichier" : "Choisir le fichier Antwoordtabel"}
-          aide={modele ? modele.nom : "Fichier .xlsx fourni par Test-Achats"}
+          libelle={modele ? t("Changer de fichier") : t("Choisir le fichier Antwoordtabel")}
+          aide={modele ? modele.nom : t("Fichier .xlsx fourni par Test-Achats")}
           ton="ghost"
         />
         {modele && (
           <>
             <Field
-              label="Écrire à partir de la ligne"
-              hint="Ligne 2 = juste sous les titres. La valeur proposée est la première ligne libre du fichier."
+              label={t("Écrire à partir de la ligne")}
+              hint={t("Ligne 2 = juste sous les titres. La valeur proposée est la première ligne libre du fichier.")}
               type="number"
               value={modele.depart}
               onChange={(v) => setModele((m) => ({ ...m, depart: v }))}
               inputMode="numeric"
             />
             <Bouton onClick={remplir} disabled={vide || remplissage} className="w-full">
-              {remplissage ? "Écriture en cours…" : `Télécharger le fichier rempli (${calls.length} appels)`}
+              {remplissage
+                ? t("Écriture en cours…")
+                : t("Télécharger le fichier rempli ({n} appels)", { n: calls.length })}
             </Bouton>
           </>
         )}
       </Block>
 
-      <Block title="Coller directement dans Excel">
+      <Block title={t("Coller directement dans Excel")}>
         <p className="mb-3 text-[13px] text-slate-600">
-          Le texte ci-dessous contient {calls.length} appel{calls.length > 1 ? "s" : ""} dans l'ordre des 23 colonnes.
-          Copie-le, puis colle-le dans la première cellule vide de la colonne A : Excel répartit les colonnes tout seul.
+          {t("Le texte ci-dessous contient {n} appels dans l'ordre des 23 colonnes. Copie-le, puis colle-le dans la première cellule vide de la colonne A : Excel répartit les colonnes tout seul.", { n: calls.length })}
         </p>
         <Case checked={avecEnTete} onChange={setAvecEnTete}>
-          Inclure la ligne de titres
+          {t("Inclure la ligne de titres")}
         </Case>
         <Bouton onClick={copier} disabled={vide} className="mb-3 w-full">
-          Copier pour Excel
+          {t("Copier pour Excel")}
         </Bouton>
         <textarea
           readOnly
@@ -175,7 +182,7 @@ export default function DonneesScreen({
         />
       </Block>
 
-      <Block title="Autres fichiers">
+      <Block title={t("Autres fichiers")}>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <Bouton
             variant="ghost"
@@ -185,36 +192,34 @@ export default function DonneesScreen({
               telecharger(nomFichier("appels-dentistes", "xlsx"), blob);
             }}
           >
-            Classeur .xlsx neuf
+            {t("Classeur .xlsx neuf")}
           </Bouton>
           <Bouton
             variant="ghost"
             disabled={vide}
             onClick={() => telecharger(nomFichier("appels-dentistes", "csv"), csv(calls), "text/csv;charset=utf-8")}
           >
-            Fichier .csv
+            {t("Fichier .csv")}
           </Bouton>
           <Bouton
             variant="ghost"
             disabled={vide}
             onClick={() => telecharger(nomFichier("suivi-rappels-annulations", "csv"), csvSuivi(calls), "text/csv;charset=utf-8")}
           >
-            Suivi : rappels et annulations
+            {t("Suivi : rappels et annulations")}
           </Bouton>
           <Bouton
             variant="ghost"
             onClick={() => telecharger(nomFichier("sauvegarde-appels", "json"), sauvegarde(etat), "application/json")}
           >
-            Sauvegarde .json
+            {t("Sauvegarde .json")}
           </Bouton>
         </div>
       </Block>
 
-      <Block title="Changer d'appareil">
+      <Block title={t("Changer d'appareil")}>
         <p className="mb-3 text-[13px] text-slate-600">
-          La sauvegarde <strong>.json</strong> contient tout : la liste d'appel, les appels encodés et le suivi.
-          Télécharge-la sur un appareil, puis charge-la sur l'autre (bouton « Fichier » plus haut). Le code ci-dessous
-          fait la même chose par copier-coller si le fichier ne passe pas.
+          {t("La sauvegarde .json contient tout : la liste d'appel, les appels encodés et le suivi. Télécharge-la sur un appareil, puis charge-la sur l'autre. Le code ci-dessous fait la même chose par copier-coller si le fichier ne passe pas.")}
         </p>
         <textarea
           readOnly
@@ -225,16 +230,16 @@ export default function DonneesScreen({
         />
       </Block>
 
-      <Block title="Après le transfert" tone="warn">
+      <Block title={t("Après le transfert")} tone="warn">
         <p className="mb-3 text-[13px] text-slate-600">
-          À faire seulement une fois les lignes collées et le fichier Excel enregistré.
+          {t("À faire seulement une fois les lignes collées et le fichier Excel enregistré.")}
         </p>
         <div className="flex flex-wrap gap-2">
           <Bouton variant="danger" onClick={onViderAppels} disabled={vide}>
-            Vider les appels encodés
+            {t("Vider les appels encodés")}
           </Bouton>
           <Bouton variant="danger" onClick={onToutEffacer}>
-            Tout effacer (liste comprise)
+            {t("Tout effacer (liste comprise)")}
           </Bouton>
         </div>
       </Block>
