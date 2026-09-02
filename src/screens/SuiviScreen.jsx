@@ -5,6 +5,7 @@ import { OUI_NON, besoinRappel, rdvPris, telHref } from "../lib/model.js";
 import { dateLongue, frDate, joursRestants, today } from "../lib/dates.js";
 import { lienRegistre } from "../lib/scenario.js";
 import { useT } from "../lib/i18n.js";
+import { classeurRendezVous, nomFichier, rendezVousPlaces, telecharger } from "../lib/exporters.js";
 
 function Echeance({ iso }) {
   const t = useT();
@@ -16,7 +17,7 @@ function Echeance({ iso }) {
   return <Puce>{t("dans {n} j", { n: jours })}</Puce>;
 }
 
-export default function SuiviScreen({ calls, majAppel, controles, onControle }) {
+export default function SuiviScreen({ calls, prospects = [], majAppel, controles, onControle }) {
   const t = useT();
   const rappels = calls.filter((c) => besoinRappel(c) && !c.rappelFait);
   const rappelsFaits = calls.filter((c) => besoinRappel(c) && c.rappelFait);
@@ -24,6 +25,12 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
     .filter((c) => rdvPris(c) && !c.annulation?.faiteLe)
     .sort((a, b) => String(a.annulation?.prevueLe).localeCompare(String(b.annulation?.prevueLe)));
   const dernierControle = controles[controles.length - 1];
+  const tousLesRdv = rendezVousPlaces(calls, prospects);
+
+  const telechargeRdv = async () => {
+    const blob = await classeurRendezVous(calls, prospects, t);
+    telecharger(nomFichier("rendez-vous-a-annuler", "xlsx"), blob);
+  };
 
   return (
     <div className="pb-24 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:pb-0">
@@ -113,6 +120,23 @@ export default function SuiviScreen({ calls, majAppel, controles, onControle }) 
         <p className="mb-3 text-[13px] text-slate-600">
           {t("À annuler seulement après 4 jours ouvrables : Test-Achats veut voir si le cabinet annule de lui-même. Par téléphone ou par e-mail, sans être identifiable.")}
         </p>
+
+        {tousLesRdv.length > 0 && (
+          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="mb-2 text-[12.5px] text-slate-600">
+              {t.n(
+                tousLesRdv.length,
+                "{n} rendez-vous placé depuis le début de la mission.",
+                "{n} rendez-vous placés depuis le début de la mission."
+              )}{" "}
+              {t("Le classeur les reprend tous, du plus urgent à annuler au plus lointain.")}
+            </p>
+            <Bouton variant="ghost" onClick={telechargeRdv} className="w-full sm:w-auto">
+              {t("Télécharger les rendez-vous (.xlsx)")}
+            </Bouton>
+          </div>
+        )}
+
         {!annulations.length && <Vide>{t("Aucun rendez-vous en attente d'annulation.")}</Vide>}
         {annulations.map((call) => (
           <div key={call.id} className="mb-3 rounded-xl border border-slate-200 p-3">

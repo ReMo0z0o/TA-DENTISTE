@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { COLUMNS, ETATS_PROSPECT, OUI_NON, STATUTS, SUPPLEMENT, INFO_PRIX, SANS_SUPP, MEME_CABINET, REMBOURSEMENT, RAISONS } from "../src/lib/model.js";
 import { CHAMPS_LISTE } from "../src/lib/importers.js";
+import { COLONNES_RDV } from "../src/lib/exporters.js";
 
 const RACINE = path.resolve("src");
 
@@ -38,6 +39,8 @@ function clesDynamiques() {
   for (const col of COLUMNS) cles.add(col.label);
   for (const etat of ETATS_PROSPECT) cles.add(etat.label);
   for (const champ of CHAMPS_LISTE) cles.add(champ.label);
+  // intitulés du classeur des rendez-vous, traduits au moment de l'export
+  for (const colonne of COLONNES_RDV) cles.add(colonne.titre);
   // valeurs du fichier de réponses : traduites à l'affichage, stockées en français
   for (const valeur of [
     ...OUI_NON, ...STATUTS, ...SUPPLEMENT, ...INFO_PRIX,

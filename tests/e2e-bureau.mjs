@@ -4,6 +4,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { jeu } from "./fixtures.mjs";
+import { readXlsx } from "../src/lib/xlsx.js";
 
 const PORT = 5198;
 const RACINE = path.resolve("docs");
@@ -206,6 +207,24 @@ const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
   return grille ? getComputedStyle(grille).gridTemplateColumns.split(" ").length : 0;
 });
 verifie("le suivi se répartit sur deux colonnes", colonnesSuivi === 2, String(colonnesSuivi));
+
+// le classeur des rendez-vous placés, pour préparer les annulations
+verifie("les rendez-vous placés sont annoncés", await page.isVisible("text=rendez-vous placés depuis le début"));
+const dlRdv = page.waitForEvent("download");
+await page.click('button:has-text("Télécharger les rendez-vous (.xlsx)")');
+const fichierRdv = path.join(SORTIES, "rendez-vous.xlsx");
+await (await dlRdv).saveAs(fichierRdv);
+const octetsRdv = fs.readFileSync(fichierRdv);
+const classeurRdv = await readXlsx(octetsRdv.buffer.slice(octetsRdv.byteOffset, octetsRdv.byteOffset + octetsRdv.byteLength));
+const lignesRdv = classeurRdv.sheets[0].rows;
+verifie("classeur des rendez-vous téléchargé", classeurRdv.sheets[0].name === "Rendez-vous", classeurRdv.sheets[0].name);
+verifie("une ligne de titres claire", lignesRdv[0][0] === "À annuler à partir du" && lignesRdv[0][2] === "Dentiste", lignesRdv[0].slice(0, 3).join(" | "));
+verifie("les deux rendez-vous placés y sont", lignesRdv.length === 3, `${lignesRdv.length - 1} rendez-vous`);
+const avecTel = lignesRdv.slice(1).find((l) => l[2] === A.premierNom);
+verifie("le téléphone est là pour annuler", avecTel && avecTel[3] === A.premierTel, String(avecTel && avecTel[3]));
+verifie("la date d'annulation est une vraie date", /^\d{4}-\d{2}-\d{2}$/.test(avecTel[0]), String(avecTel[0]));
+verifie("le statut d'annulation est explicite", /annuler/i.test(avecTel[1]), String(avecTel[1]));
+
 await page.screenshot({ path: path.join(SORTIES, "pc-suivi.png") });
 
 await page.keyboard.press("Alt+5");

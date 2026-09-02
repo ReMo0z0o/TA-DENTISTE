@@ -1,7 +1,7 @@
 // Sorties : collage Excel, .csv, classeur .xlsx neuf, remplissage du fichier
 // officiel Antwoordtabel, et sauvegarde .json pour changer d'appareil.
-import { COLUMNS, DATE_FIELDS, HEADERS, ordreExport } from "./model.js";
-import { frDate, stamp } from "./dates.js";
+import { COLUMNS, DATE_FIELDS, HEADERS, ordreExport, rdvPris } from "./model.js";
+import { frDate, stamp, today } from "./dates.js";
 import { buildXlsx, fillTemplate, templateFirstFreeRow } from "./xlsx.js";
 
 /**
@@ -78,6 +78,132 @@ export function remplirModele(buffer, calls, startRow) {
 }
 
 export { templateFirstFreeRow };
+
+/* ------------------------------------------ rendez-vous à annuler */
+
+/**
+ * Le rendez-vous réellement pris. Scénario B : si le premier est avec
+ * supplément mais qu'un rendez-vous au tarif officiel est possible, c'est
+ * celui-là qu'on a pris.
+ */
+export function dateRendezVousPris(call) {
+  if (call.rdvSansSupplement === "oui" && call.dateSansSupplement) return call.dateSansSupplement;
+  return call.datePremierRdv || call.dateSansSupplement || "";
+}
+
+/** Où en est l'annulation : "a_annuler", "annule" ou "annule_cabinet". */
+export function etatAnnulation(call) {
+  if (!call.annulation?.faiteLe) return "a_annuler";
+  return call.annulation.parCabinet ? "annule_cabinet" : "annule";
+}
+
+/**
+ * Tous les rendez-vous placés, du plus urgent à annuler au plus lointain.
+ * Les fiches praticiens servent à retrouver la commune.
+ */
+export function rendezVousPlaces(calls, prospects = []) {
+  const parId = new Map(prospects.map((p) => [p.id, p]));
+  return calls
+    .filter(rdvPris)
+    .map((call) => {
+      const fiche = parId.get(call.prospectId);
+      return {
+        id: call.id,
+        annulerLe: call.annulation?.prevueLe || "",
+        etat: etatAnnulation(call),
+        annuleLe: call.annulation?.faiteLe || "",
+        dentiste: call.dentiste,
+        roleY: Boolean(call.roleY),
+        telephone: call.telephone,
+        rdvLe: dateRendezVousPris(call),
+        tarif: call.supplementPremierRdv || "",
+        prix: call.prix || "",
+        commune: fiche?.commune || "",
+        province: call.province || fiche?.province || "",
+        appelLe: call.dateAppel || "",
+        heureAppel: call.heureAppel || "",
+        remarques: call.remarques || "",
+      };
+    })
+    .sort((a, b) => {
+      // ce qui reste à annuler passe devant, puis par date d'annulation
+      const faitA = a.etat === "a_annuler" ? 0 : 1;
+      const faitB = b.etat === "a_annuler" ? 0 : 1;
+      if (faitA !== faitB) return faitA - faitB;
+      return String(a.annulerLe || "9999").localeCompare(String(b.annulerLe || "9999"));
+    });
+}
+
+/** Colonnes du classeur des rendez-vous : intitulé, clé, type et largeur. */
+export const COLONNES_RDV = [
+  { cle: "annulerLe", titre: "À annuler à partir du", type: "date", largeur: 20 },
+  { cle: "statut", titre: "Où en est l'annulation", largeur: 26 },
+  { cle: "dentiste", titre: "Dentiste", largeur: 30 },
+  { cle: "telephone", titre: "Téléphone", largeur: 18 },
+  { cle: "rdvLe", titre: "Rendez-vous pris le", type: "date", largeur: 18 },
+  { cle: "tarif", titre: "Tarif annoncé", largeur: 22 },
+  { cle: "prix", titre: "Prix (€)", type: "nombre", largeur: 10 },
+  { cle: "commune", titre: "Commune", largeur: 18 },
+  { cle: "province", titre: "Province", largeur: 16 },
+  { cle: "appelLe", titre: "Appel du", type: "date", largeur: 13 },
+  { cle: "heureAppel", titre: "Heure", largeur: 8 },
+  { cle: "remarques", titre: "Remarques", largeur: 40 },
+];
+
+/**
+ * Classeur des rendez-vous placés : trié par urgence, en-têtes traduits, ce qui
+ * est à annuler mis en avant et ce qui est fait estompé.
+ * C'est un fichier de travail personnel : il suit la langue de l'application,
+ * contrairement au fichier de réponses de Test-Achats.
+ */
+export function classeurRendezVous(calls, prospects, t = (x) => x) {
+  const lignes = rendezVousPlaces(calls, prospects);
+  const aujourdhui = today();
+  const highlight = new Set();
+  const estompe = new Set();
+
+  const rows = lignes.map((ligne, i) => {
+    const urgent = ligne.etat === "a_annuler" && ligne.annulerLe && ligne.annulerLe <= aujourdhui;
+    if (ligne.etat !== "a_annuler") estompe.add(i);
+    else if (urgent) highlight.add(i);
+
+    const statut =
+      ligne.etat === "annule_cabinet"
+        ? t("Annulé par le cabinet le {date}", { date: frDate(ligne.annuleLe) })
+        : ligne.etat === "annule"
+          ? t("Annulé le {date}", { date: frDate(ligne.annuleLe) })
+          : urgent
+            ? t("À annuler maintenant")
+            : t("À annuler");
+
+    const valeurs = {
+      ...ligne,
+      statut,
+      dentiste: ligne.roleY ? `${ligne.dentiste} (${t("dentiste Y")})` : ligne.dentiste,
+      tarif: t.valeur ? t.valeur(ligne.tarif) : ligne.tarif,
+    };
+
+    return COLONNES_RDV.map(({ cle, type }) => {
+      const valeur = valeurs[cle] ?? "";
+      if (valeur === "") return "";
+      if (type === "date") return { t: "d", v: valeur };
+      if (type === "nombre") {
+        const nombre = Number(String(valeur).replace(",", ".").replace(/[^\d.-]/g, ""));
+        return Number.isFinite(nombre) ? { t: "n", v: nombre } : String(valeur);
+      }
+      return String(valeur);
+    });
+  });
+
+  return buildXlsx({
+    sheetName: t("Rendez-vous"),
+    headers: COLONNES_RDV.map((c) => t(c.titre)),
+    rows,
+    highlight,
+    estompe,
+    widths: COLONNES_RDV.map((c) => c.largeur),
+  });
+}
 
 /**
  * Sauvegarde complète : liste d'appel, appels (avec leurs rappels et leurs

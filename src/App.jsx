@@ -442,6 +442,7 @@ export default function App() {
       {onglet === "suivi" && (
         <SuiviScreen
           calls={etat.calls}
+          prospects={etat.prospects}
           majAppel={majAppel}
           controles={etat.suivi.controlesRegistre}
           onControle={(date) =>

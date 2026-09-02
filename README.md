@@ -165,7 +165,17 @@ dentiste X et surligné en jaune, comme demandé.
   lendemain, avec de quoi noter le second appel (date, rendez-vous obtenu).
 - **Rendez-vous à annuler** : la date d'annulation est calculée à **4 jours
   ouvrables** après l'appel, avec le compte à rebours et un bouton « le cabinet a
-  annulé lui-même » (qui l'écrit dans les remarques).
+  annulé lui-même » (qui l'écrit dans les remarques). Un bouton
+  **« Télécharger les rendez-vous (.xlsx) »** sort tous les rendez-vous placés
+  depuis le début de la mission, dans un classeur fait pour être lu :
+  trié du plus urgent à annuler au plus lointain, ce qui est déjà annulé
+  renvoyé en fin de liste et grisé, ce qui est à annuler aujourd'hui surligné,
+  titres figés et filtres actifs, vraies dates et prix numérique. Colonnes :
+  date d'annulation, où en est l'annulation, dentiste, téléphone, rendez-vous
+  pris, tarif, prix, commune, province, date et heure de l'appel, remarques.
+  Le rendez-vous repris est bien **celui qu'on a pris** : si le premier était
+  avec supplément et qu'un rendez-vous au tarif officiel était possible, c'est
+  ce dernier qui compte, comme le veut le scénario B.
 - **Registre national** : le lien vers « Mon dossier » et la date du dernier
   contrôle hebdomadaire.
 
@@ -183,7 +193,11 @@ Quatre sorties, de la plus directe à la plus souple :
 3. **Classeur `.xlsx` neuf** ou **`.csv`**, si le fichier officiel n'est pas sous
    la main.
 4. **Suivi `.csv`** — rappels et annulations, qui ne font pas partie des 23
-   colonnes.
+   colonnes. Pour les seules annulations, le classeur `.xlsx` de l'onglet Suivi
+   est plus lisible.
+
+Ces fichiers de travail personnels suivent la langue de l'application ; seul le
+fichier de réponses de Test-Achats reste en français.
 
 ### 6. Changer d'appareil
 
