@@ -201,7 +201,11 @@ fichier de réponses de Test-Achats reste en français.
 
 ### 6. Changer d'appareil
 
-« Sauvegarde `.json` » télécharge **tout** ce que l'application sait :
+Le bloc « Changer d'appareil » de l'onglet Données porte les deux bouts du
+trajet : **1. Emporter le travail** sur l'appareil qu'on quitte, **2. Reprendre
+le travail ici** sur celui où l'on arrive.
+
+« Télécharger le fichier `.json` » emporte **tout** ce que l'application sait :
 
 - la liste d'appel avec l'état de chaque praticien (à appeler, fait, injoignable…) ;
 - les appels encodés, colonnes du fichier Excel, heure et remarques comprises ;
@@ -213,12 +217,27 @@ fichier de réponses de Test-Achats reste en français.
 Sur l'autre appareil, le même fichier se charge depuis « Charger une liste
 d'appel » : au choix **remplacer** ou **compléter** ce qui s'y trouve déjà. En
 mode « compléter », rien n'est effacé et les deux suivis fusionnent sans
-doublon ; recharger deux fois la même sauvegarde ne duplique rien. Seule la
-langue d'affichage reste propre à chaque appareil. Un code de reprise à
-copier-coller fait la même chose si le fichier ne passe pas.
+doublon ; recharger deux fois la même sauvegarde ne duplique rien. Une
+sauvegarde d'une version antérieure de l'application repart complète : les
+champs ajoutés depuis reprennent leur valeur par défaut. Seule la langue
+d'affichage reste propre à chaque appareil.
 
-L'appel en cours de saisie est lui aussi enregistré en continu : fermer l'onglet
-par erreur ne fait rien perdre.
+Quand le fichier ne passe pas — une messagerie, un appareil qui n'accepte pas
+les téléchargements — le **code de reprise** fait la même chose : « Copier le
+code » le met dans le presse-papier d'un seul geste (avec le nombre de
+caractères pour vérifier des deux côtés), et il se recolle dans la zone du
+point 2. Il tient sur une seule ligne, sans indentation, pour ne pas se faire
+recouper en chemin. Un code qui a traversé un messager arrive souvent abîmé :
+espaces insécables à la place des espaces, guillemets typographiques, clôtures
+de bloc de code, phrase d'accompagnement. Tout cela est réparé à la lecture,
+sans jamais retoucher les données elles-mêmes — un espace insécable *à
+l'intérieur* d'un numéro de téléphone est conservé tel quel. S'il manque
+vraiment la fin, l'application le dit et annonce le nombre de caractères reçus,
+plutôt que de charger un travail incomplet.
+
+L'appel en cours de saisie est lui aussi enregistré en continu, et la sauvegarde
+en attente est écrite immédiatement si l'onglet se ferme ou passe en
+arrière-plan : fermer l'onglet par erreur ne fait rien perdre.
 
 ## Sous le capot
 
@@ -231,7 +250,8 @@ telles quelles — d'où la conservation des listes déroulantes.
 
 ```
 src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, export,
-              i18n + traductions (fr / nl / en), scénario dans les trois langues
+              lecture des codes de reprise, i18n + traductions (fr / nl / en),
+              scénario dans les trois langues
 src/screens/  Liste · Appel · Journée · Suivi · Données
 src/components/ briques d'interface, panneau d'import, scénario, raccourcis
 docs/         l'application construite, en un seul fichier

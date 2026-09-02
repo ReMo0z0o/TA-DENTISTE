@@ -13,6 +13,7 @@ import {
   prospectsDepuis,
 } from "../lib/importers.js";
 import { PROVINCES, STATUTS } from "../lib/model.js";
+import { lisCodeDeReprise, ressembleAUnCode } from "../lib/reprise.js";
 import { useT } from "../lib/i18n.js";
 
 export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash }) {
@@ -66,12 +67,14 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
   const surCollage = () => {
     const brut = texte.trim();
     if (!brut) return;
-    if (brut.startsWith("{") || brut.startsWith("[")) {
-      try {
-        onSauvegarde(JSON.parse(brut));
+    // un code de reprise passe souvent par un messager ou une note : on répare
+    // ce qui a été abîmé en route plutôt que de le rejeter en bloc
+    if (ressembleAUnCode(brut)) {
+      const lu = lisCodeDeReprise(brut);
+      if (lu.erreur) flash(t(lu.erreur, lu.valeurs));
+      else {
+        onSauvegarde(lu.data);
         setTexte("");
-      } catch {
-        flash(t("Ce code de reprise est illisible — il a peut-être été tronqué."));
       }
       return;
     }

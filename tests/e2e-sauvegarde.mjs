@@ -115,7 +115,7 @@ console.log("\n3. Téléchargement de la sauvegarde");
 await bureau.keyboard.press("Alt+5");
 await bureau.waitForTimeout(250);
 const telechargement = bureau.waitForEvent("download");
-await bureau.click('button:has-text("Sauvegarde .json")');
+await bureau.click('button:has-text("Télécharger le fichier .json")');
 const fichierJson = path.join(SORTIES, "sauvegarde-suivi.json");
 await (await telechargement).saveAs(fichierJson);
 const contenu = JSON.parse(fs.readFileSync(fichierJson, "utf8"));
@@ -170,7 +170,57 @@ verifie(
 );
 await autre.screenshot({ path: path.join(SORTIES, "suivi-apres.png") });
 
-console.log("\n6. Aucune erreur JavaScript");
+console.log("\n6. Le transfert par copier-coller, y compris abîmé en route");
+// on repart du bureau : le bouton met le code dans le presse-papier
+await bureau.keyboard.press("Alt+5");
+await bureau.waitForTimeout(250);
+await bureau.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+await bureau.click('button:has-text("Copier le code")');
+await bureau.waitForTimeout(300);
+const codeCopie = await bureau.evaluate(() => navigator.clipboard.readText());
+verifie("le bouton copie bien le code", codeCopie.startsWith('{"app":"ta-dentiste"'), codeCopie.slice(0, 40));
+verifie("le code tient sur une seule ligne", !codeCopie.includes("\n"));
+verifie(
+  "le compte de caractères annoncé est le bon",
+  (await bureau.textContent('[data-role="taille-code"]')).includes(String(codeCopie.length)),
+  (await bureau.textContent('[data-role="taille-code"]')) + " ≠ " + codeCopie.length
+);
+
+// ce que le code devient après un passage par un messager : espaces
+// insécables, clôtures de bloc de code, phrase autour
+const NBSP = String.fromCharCode(0xa0);
+const abime = "Voici mon travail :\n```json\n" + codeCopie.replace(/,"/g, "," + NBSP + '"') + "\n```\nMerci !";
+const troisieme = await ouvreAppareil();
+await troisieme.keyboard.press("Alt+5");
+await troisieme.waitForTimeout(250);
+await troisieme.fill('[data-role="collage-reprise"]', abime);
+await troisieme.click('button:has-text("Charger ce code")');
+await troisieme.waitForTimeout(700);
+await troisieme.keyboard.press("Alt+1");
+await troisieme.waitForTimeout(300);
+verifie(
+  "le code abîmé est réparé et la liste revient",
+  (await troisieme.$$eval("tbody tr", (e) => e.length)) === A.praticiens,
+  String(await troisieme.$$eval("tbody tr", (e) => e.length))
+);
+await troisieme.keyboard.press("Alt+3");
+await troisieme.waitForTimeout(300);
+verifie(
+  "l'appel encodé revient lui aussi",
+  (await troisieme.textContent("body")).includes(A.premierNom)
+);
+
+// un code tronqué doit le dire, et ne rien écraser
+const quatrieme = await ouvreAppareil();
+await quatrieme.keyboard.press("Alt+5");
+await quatrieme.waitForTimeout(250);
+await quatrieme.fill('[data-role="collage-reprise"]', codeCopie.slice(0, Math.floor(codeCopie.length / 2)));
+await quatrieme.click('button:has-text("Charger ce code")');
+await quatrieme.waitForTimeout(400);
+const messageTronque = await quatrieme.textContent("body");
+verifie("un code tronqué est annoncé comme incomplet", /incomplet/.test(messageTronque), messageTronque.replace(/\s+/g, " ").slice(0, 120));
+
+console.log("\n7. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

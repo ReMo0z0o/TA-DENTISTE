@@ -94,17 +94,37 @@ export default function App() {
     if (charge0.prospects.length === 0 && charge0.calls.length === 0) setOnglet("donnees");
   }, []);
 
-  // sauvegarde différée : rien ne se perd si l'onglet se ferme
+  // Sauvegarde différée : on n'écrit pas à chaque frappe.
+  const aEnregistrer = useRef(null);
   useEffect(() => {
     if (!etat) return;
+    const brouillon = call.dentiste || call.telephone || call.rdvPossible ? call : null;
+    aEnregistrer.current = { ...etat, brouillon };
     clearTimeout(minuteur.current);
     minuteur.current = setTimeout(() => {
-      const brouillon = call.dentiste || call.telephone || call.rdvPossible ? call : null;
-      const erreur = enregistre({ ...etat, brouillon });
-      setAlerte(erreur || "");
+      setAlerte(enregistre(aEnregistrer.current) || "");
+      aEnregistrer.current = null;
     }, 400);
     return () => clearTimeout(minuteur.current);
   }, [etat, call]);
+
+  // …mais si l'onglet se ferme ou passe en arrière-plan pendant ce délai, on
+  // écrit tout de suite : c'est exactement le moment où l'on change d'appareil.
+  useEffect(() => {
+    const vide = () => {
+      if (!aEnregistrer.current) return;
+      clearTimeout(minuteur.current);
+      enregistre(aEnregistrer.current);
+      aEnregistrer.current = null;
+    };
+    const auMasquage = () => document.visibilityState === "hidden" && vide();
+    window.addEventListener("pagehide", vide);
+    document.addEventListener("visibilitychange", auMasquage);
+    return () => {
+      window.removeEventListener("pagehide", vide);
+      document.removeEventListener("visibilitychange", auMasquage);
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = langue;

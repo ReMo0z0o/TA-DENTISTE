@@ -267,7 +267,13 @@ const tsvApresEn = await page.inputValue("textarea[readonly]");
 verifie("l'export reste en français en anglais", tsvApresEn === tsvFrancais, tsvApresEn.slice(0, 80));
 await page.screenshot({ path: path.join(SORTIES, "pc-anglais.png") });
 
-// la langue survit au rechargement
+// la langue survit au rechargement — on attend l'enregistrement plutôt que de
+// le supposer : sinon le test course la sauvegarde différée
+await page.waitForFunction(
+  () => JSON.parse(localStorage.getItem("ta-dentiste:v1") || "{}")?.reglages?.langue === "en",
+  null,
+  { timeout: 5000 }
+);
 await page.reload();
 await page.waitForSelector("aside h1");
 verifie("langue mémorisée après rechargement", (await page.textContent("aside nav")).includes("List"));

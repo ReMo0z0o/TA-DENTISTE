@@ -1,10 +1,11 @@
 // Tout ce qui entre et tout ce qui sort : listes d'appel, fichier Excel de
 // réponses, sauvegarde pour passer du bureau au téléphone.
-import { useState } from "react";
-import { Block, Bouton, Case, Field, Vide, ZoneFichier } from "../components/ui.jsx";
+import { useMemo, useRef, useState } from "react";
+import { Block, Bouton, Case, Field, Label, Vide, ZoneFichier } from "../components/ui.jsx";
 import ImportPanel from "../components/ImportPanel.jsx";
 import {
   classeurNeuf,
+  codeDeReprise,
   csv,
   nomFichier,
   remplirModele,
@@ -15,6 +16,7 @@ import {
 } from "../lib/exporters.js";
 import { besoinRappel, ordreExport, rdvPris } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
+import { lisCodeDeReprise } from "../lib/reprise.js";
 import { useT } from "../lib/i18n.js";
 
 function csvSuivi(calls) {
@@ -77,6 +79,46 @@ export default function DonneesScreen({
   const [modele, setModele] = useState(null); // { nom, buffer, depart }
   const [remplissage, setRemplissage] = useState(false);
   const vide = calls.length === 0;
+
+  // Le code ne se recalcule qu'au changement des données : s'il se réécrivait à
+  // chaque rendu, la sélection de l'utilisateur sauterait au milieu de sa copie.
+  const code = useMemo(() => codeDeReprise(etat), [etat]);
+  const zoneCode = useRef(null);
+  const [reprise, setReprise] = useState("");
+
+  const copieLeCode = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      flash(t("Code copié ({n} caractères). Colle-le sur l'autre appareil.", { n: code.length }));
+      return;
+    } catch {
+      /* navigateur sans presse-papier : on repasse par la sélection */
+    }
+    const zone = zoneCode.current;
+    if (zone) {
+      zone.focus();
+      zone.select();
+      try {
+        if (document.execCommand("copy")) {
+          flash(t("Code copié ({n} caractères). Colle-le sur l'autre appareil.", { n: code.length }));
+          return;
+        }
+      } catch {
+        /* rien à faire de plus */
+      }
+    }
+    flash(t("Copie automatique refusée : le code est sélectionné, fais Ctrl+C (ou Cmd+C)."));
+  };
+
+  const chargeLeCode = () => {
+    const lu = lisCodeDeReprise(reprise);
+    if (lu.erreur) {
+      flash(t(lu.erreur, lu.valeurs));
+      return;
+    }
+    onSauvegarde(lu.data);
+    setReprise("");
+  };
 
   const chargeModele = async (file) => {
     if (!file) return;
@@ -208,26 +250,52 @@ export default function DonneesScreen({
           >
             {t("Suivi : rappels et annulations")}
           </Bouton>
-          <Bouton
-            variant="ghost"
-            onClick={() => telecharger(nomFichier("sauvegarde-appels", "json"), sauvegarde(etat), "application/json")}
-          >
-            {t("Sauvegarde .json")}
-          </Bouton>
         </div>
       </Block>
 
       <Block title={t("Changer d'appareil")}>
         <p className="mb-3 text-[13px] text-slate-600">
-          {t("La sauvegarde .json contient tout : la liste d'appel, les appels encodés et le suivi. Télécharge-la sur un appareil, puis charge-la sur l'autre. Le code ci-dessous fait la même chose par copier-coller si le fichier ne passe pas.")}
+          {t("Tout est transféré : la liste d'appel, les appels encodés et le suivi. Le fichier .json est le moyen le plus sûr ; le code ci-dessous fait la même chose par copier-coller quand le fichier ne passe pas.")}
         </p>
+
+        <Label hint={t("Sur l'appareil que tu quittes.")}>{t("1. Emporter le travail")}</Label>
+        <div className="mb-2 flex flex-wrap gap-2">
+          <Bouton
+            onClick={() => telecharger(nomFichier("sauvegarde-appels", "json"), sauvegarde(etat), "application/json")}
+          >
+            {t("Télécharger le fichier .json")}
+          </Bouton>
+          <Bouton variant="ghost" onClick={copieLeCode}>
+            {t("Copier le code")}
+          </Bouton>
+        </div>
         <textarea
           readOnly
-          rows={3}
-          value={sauvegarde(etat)}
+          rows={2}
+          ref={zoneCode}
+          value={code}
           onFocus={(e) => e.target.select()}
+          data-role="code-de-reprise"
           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-[11px] text-slate-600"
         />
+        <p data-role="taille-code" className="mt-1 mb-4 text-[11.5px] text-slate-500">
+          {t("{n} caractères — le code doit être collé en entier, jusqu'à l'accolade finale.", { n: code.length })}
+        </p>
+
+        <Label hint={t("Sur l'appareil où tu reprends. Le fichier .json se charge, lui, par « Charger une liste d'appel ».")}>
+          {t("2. Reprendre le travail ici")}
+        </Label>
+        <textarea
+          rows={2}
+          value={reprise}
+          onChange={(e) => setReprise(e.target.value)}
+          placeholder={t("Colle ici le code copié sur l'autre appareil")}
+          data-role="collage-reprise"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-[11px] focus:border-teal-700 focus:outline-none"
+        />
+        <Bouton onClick={chargeLeCode} disabled={!reprise.trim()} className="mt-2 w-full">
+          {t("Charger ce code")}
+        </Bouton>
       </Block>
 
       <Block title={t("Après le transfert")} tone="warn">

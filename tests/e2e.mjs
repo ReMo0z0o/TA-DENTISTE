@@ -129,7 +129,7 @@ verifie("listes déroulantes conservées", /<dataValidations/.test(feuille) && /
 
 console.log("\n6. Sauvegarde .json et reprise sur un autre appareil");
 const dlJson = page.waitForEvent("download");
-await page.click('button:has-text("Sauvegarde .json")');
+await page.click('button:has-text("Télécharger le fichier .json")');
 const fichierJson = path.join(SORTIES, "sauvegarde.json");
 await (await dlJson).saveAs(fichierJson);
 const sauvegarde = JSON.parse(fs.readFileSync(fichierJson, "utf8"));

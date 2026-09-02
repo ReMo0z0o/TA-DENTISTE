@@ -310,8 +310,6 @@ const NL = {
   "Importer {n} praticiens": "{n} beoefenaars importeren",
   "Ce fichier ne contient aucune ligne exploitable.": "Dit bestand bevat geen bruikbare rij.",
   "Lecture du fichier impossible.": "Het bestand kon niet gelezen worden.",
-  "Ce code de reprise est illisible — il a peut-être été tronqué.":
-    "Die herstelcode is onleesbaar — misschien is ze afgekapt.",
   "Rien à charger.": "Niets om te laden.",
   "Aucun appel trouvé dans ce tableau.": "Geen enkele oproep gevonden in die tabel.",
   "Aucun praticien trouvé : vérifie la correspondance des colonnes.":
@@ -355,10 +353,30 @@ const NL = {
   "Classeur .xlsx neuf": "Nieuw .xlsx-bestand",
   "Fichier .csv": ".csv-bestand",
   "Suivi : rappels et annulations": "Opvolging: terugbellen en annuleren",
-  "Sauvegarde .json": "Back-up .json",
   "Changer d'appareil": "Van toestel wisselen",
-  "La sauvegarde .json contient tout : la liste d'appel, les appels encodés et le suivi. Télécharge-la sur un appareil, puis charge-la sur l'autre. Le code ci-dessous fait la même chose par copier-coller si le fichier ne passe pas.":
-    "De .json-back-up bevat alles: de belijst, de gecodeerde oproepen en de opvolging. Download ze op het ene toestel en laad ze op het andere. De code hieronder doet hetzelfde via kopiëren en plakken als het bestand niet doorgeraakt.",
+  "Tout est transféré : la liste d'appel, les appels encodés et le suivi. Le fichier .json est le moyen le plus sûr ; le code ci-dessous fait la même chose par copier-coller quand le fichier ne passe pas.":
+    "Alles gaat mee: de belijst, de gecodeerde oproepen en de opvolging. Het .json-bestand is de veiligste weg; de code hieronder doet hetzelfde via kopiëren en plakken wanneer het bestand niet doorgeraakt.",
+  "1. Emporter le travail": "1. Het werk meenemen",
+  "Sur l'appareil que tu quittes.": "Op het toestel dat je verlaat.",
+  "Télécharger le fichier .json": "Het .json-bestand downloaden",
+  "Copier le code": "De code kopiëren",
+  "Code copié ({n} caractères). Colle-le sur l'autre appareil.":
+    "Code gekopieerd ({n} tekens). Plak hem op het andere toestel.",
+  "Copie automatique refusée : le code est sélectionné, fais Ctrl+C (ou Cmd+C).":
+    "Automatisch kopiëren geweigerd: de code is geselecteerd, druk op Ctrl+C (of Cmd+C).",
+  "{n} caractères — le code doit être collé en entier, jusqu'à l'accolade finale.":
+    "{n} tekens — de code moet volledig geplakt worden, tot en met de slotaccolade.",
+  "2. Reprendre le travail ici": "2. Het werk hier hervatten",
+  "Sur l'appareil où tu reprends. Le fichier .json se charge, lui, par « Charger une liste d'appel ».":
+    "Op het toestel waar je hervat. Het .json-bestand laad je via « Een belijst laden ».",
+  "Colle ici le code copié sur l'autre appareil": "Plak hier de code die je op het andere toestel kopieerde",
+  "Charger ce code": "Deze code laden",
+  "Ce code de reprise est incomplet : il en manque la fin ({n} caractères reçus). Copie-le en entier avec le bouton « Copier le code », ou passe par le fichier .json.":
+    "Die herstelcode is onvolledig: het einde ontbreekt ({n} tekens ontvangen). Kopieer hem volledig met de knop « De code kopiëren », of gebruik het .json-bestand.",
+  "Ce code de reprise est illisible ({n} caractères reçus) : recopie-le avec le bouton « Copier le code », ou passe par le fichier .json.":
+    "Die herstelcode is onleesbaar ({n} tekens ontvangen): kopieer hem opnieuw met de knop « De code kopiëren », of gebruik het .json-bestand.",
+  "Ce texte n'est pas un code de reprise : il doit commencer par une accolade « { ».":
+    "Die tekst is geen herstelcode: hij moet met een accolade « { » beginnen.",
   "Sauvegarde : {p} praticiens et {c} appels.": "Back-up: {p} beoefenaars en {c} oproepen.",
   "OK = remplacer ce qu'il y a sur cet appareil": "OK = vervangen wat op dit toestel staat",
   "Annuler = compléter sans rien effacer": "Annuleren = aanvullen zonder iets te wissen",
@@ -712,8 +730,6 @@ const EN = {
   "Importer {n} praticiens": "Import {n} practitioners",
   "Ce fichier ne contient aucune ligne exploitable.": "This file contains no usable row.",
   "Lecture du fichier impossible.": "The file could not be read.",
-  "Ce code de reprise est illisible — il a peut-être été tronqué.":
-    "That restore code can't be read — it may have been truncated.",
   "Rien à charger.": "Nothing to load.",
   "Aucun appel trouvé dans ce tableau.": "No call found in that table.",
   "Aucun praticien trouvé : vérifie la correspondance des colonnes.":
@@ -756,10 +772,30 @@ const EN = {
   "Classeur .xlsx neuf": "New .xlsx workbook",
   "Fichier .csv": ".csv file",
   "Suivi : rappels et annulations": "Follow-up: call-backs and cancellations",
-  "Sauvegarde .json": "Backup .json",
   "Changer d'appareil": "Switch device",
-  "La sauvegarde .json contient tout : la liste d'appel, les appels encodés et le suivi. Télécharge-la sur un appareil, puis charge-la sur l'autre. Le code ci-dessous fait la même chose par copier-coller si le fichier ne passe pas.":
-    "The .json backup holds everything: the call list, the recorded calls and the follow-up. Download it on one device, then load it on the other. The code below does the same by copy-paste if the file won't go through.",
+  "Tout est transféré : la liste d'appel, les appels encodés et le suivi. Le fichier .json est le moyen le plus sûr ; le code ci-dessous fait la même chose par copier-coller quand le fichier ne passe pas.":
+    "Everything travels: the call list, the recorded calls and the follow-up. The .json file is the safest route; the code below does the same by copy-paste when the file won't go through.",
+  "1. Emporter le travail": "1. Take the work with you",
+  "Sur l'appareil que tu quittes.": "On the device you are leaving.",
+  "Télécharger le fichier .json": "Download the .json file",
+  "Copier le code": "Copy the code",
+  "Code copié ({n} caractères). Colle-le sur l'autre appareil.":
+    "Code copied ({n} characters). Paste it on the other device.",
+  "Copie automatique refusée : le code est sélectionné, fais Ctrl+C (ou Cmd+C).":
+    "Automatic copy refused: the code is selected, press Ctrl+C (or Cmd+C).",
+  "{n} caractères — le code doit être collé en entier, jusqu'à l'accolade finale.":
+    "{n} characters — the code must be pasted whole, up to the closing brace.",
+  "2. Reprendre le travail ici": "2. Resume the work here",
+  "Sur l'appareil où tu reprends. Le fichier .json se charge, lui, par « Charger une liste d'appel ».":
+    "On the device where you resume. The .json file itself loads through “Load a call list”.",
+  "Colle ici le code copié sur l'autre appareil": "Paste here the code copied on the other device",
+  "Charger ce code": "Load this code",
+  "Ce code de reprise est incomplet : il en manque la fin ({n} caractères reçus). Copie-le en entier avec le bouton « Copier le code », ou passe par le fichier .json.":
+    "That restore code is incomplete: the end is missing ({n} characters received). Copy it whole with the “Copy the code” button, or use the .json file.",
+  "Ce code de reprise est illisible ({n} caractères reçus) : recopie-le avec le bouton « Copier le code », ou passe par le fichier .json.":
+    "That restore code can't be read ({n} characters received): copy it again with the “Copy the code” button, or use the .json file.",
+  "Ce texte n'est pas un code de reprise : il doit commencer par une accolade « { ».":
+    "That text is not a restore code: it must start with a “{” brace.",
   "Sauvegarde : {p} praticiens et {c} appels.": "Backup: {p} practitioners and {c} calls.",
   "OK = remplacer ce qu'il y a sur cet appareil": "OK = replace what is on this device",
   "Annuler = compléter sans rien effacer": "Cancel = add to it without erasing anything",

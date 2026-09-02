@@ -211,19 +211,28 @@ export function classeurRendezVous(calls, prospects, t = (x) => x) {
  * l'application sait doit pouvoir repartir sur un autre appareil.
  */
 export function sauvegarde(etat) {
-  return JSON.stringify(
-    {
-      app: "ta-dentiste",
-      version: 3,
-      exporteLe: new Date().toISOString(),
-      reglages: etat.reglages,
-      prospects: etat.prospects,
-      calls: etat.calls,
-      suivi: etat.suivi,
-    },
-    null,
-    2
-  );
+  return JSON.stringify(contenuSauvegarde(etat), null, 2);
+}
+
+/**
+ * Le même contenu, mais sur une seule ligne : c'est celui qu'on copie à la
+ * main. Sans retours à la ligne ni indentation, il est deux fois plus court et
+ * ne peut plus être coupé par un messager qui reformate le texte.
+ */
+export function codeDeReprise(etat) {
+  return JSON.stringify(contenuSauvegarde(etat));
+}
+
+function contenuSauvegarde(etat) {
+  return {
+    app: "ta-dentiste",
+    version: 3,
+    exporteLe: new Date().toISOString(),
+    reglages: etat.reglages,
+    prospects: etat.prospects,
+    calls: etat.calls,
+    suivi: etat.suivi,
+  };
 }
 
 export const nomFichier = (base, ext) => `${base}-${stamp()}.${ext}`;

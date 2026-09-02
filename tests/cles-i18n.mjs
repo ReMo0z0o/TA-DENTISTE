@@ -6,6 +6,7 @@ import path from "node:path";
 import { COLUMNS, ETATS_PROSPECT, OUI_NON, STATUTS, SUPPLEMENT, INFO_PRIX, SANS_SUPP, MEME_CABINET, REMBOURSEMENT, RAISONS } from "../src/lib/model.js";
 import { CHAMPS_LISTE } from "../src/lib/importers.js";
 import { COLONNES_RDV } from "../src/lib/exporters.js";
+import { MESSAGES_REPRISE } from "../src/lib/reprise.js";
 
 const RACINE = path.resolve("src");
 
@@ -41,6 +42,8 @@ function clesDynamiques() {
   for (const champ of CHAMPS_LISTE) cles.add(champ.label);
   // intitulés du classeur des rendez-vous, traduits au moment de l'export
   for (const colonne of COLONNES_RDV) cles.add(colonne.titre);
+  // explications de la lecture d'un code de reprise, traduites à l'affichage
+  for (const message of Object.values(MESSAGES_REPRISE)) cles.add(message);
   // valeurs du fichier de réponses : traduites à l'affichage, stockées en français
   for (const valeur of [
     ...OUI_NON, ...STATUTS, ...SUPPLEMENT, ...INFO_PRIX,
