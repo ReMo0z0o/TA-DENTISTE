@@ -111,15 +111,42 @@ await page.keyboard.press("Control+Enter");
 await page.waitForTimeout(400);
 verifie("Ctrl+Entrée enregistre et enchaîne", (await page.textContent("body")).includes("Au suivant"));
 
-console.log("\n6. Journée en tableau");
+console.log("\n6. Suite à donner depuis la fiche");
+// on est sur la fiche du deuxième praticien : personne ne décroche
+const nomSuivant = A.deuxiemeNom;
+verifie("fiche suivante ouverte", (await page.textContent("section >> nth=0")).includes(nomSuivant), nomSuivant);
+verifie("« Fait » proposé par défaut", (await page.getAttribute("h2:has-text('Suite à donner') >> xpath=../.. >> button:text-is('Fait')", "aria-pressed")) === "true");
+
+await page.click("h2:has-text('Suite à donner') >> xpath=../.. >> button:text-is('Injoignable')");
+await page.waitForTimeout(200);
+verifie("l'application prévient qu'aucune ligne ne partira", await page.isVisible("text=aucune ligne ne partira dans le fichier Excel"));
+verifie("le bouton annonce ce qu'il va faire", await page.isVisible('button:has-text("Marquer « Injoignable » et passer au suivant")'));
+
+await page.click('button:has-text("Marquer « Injoignable »")');
+await page.waitForTimeout(400);
+verifie("passage automatique au praticien suivant", (await page.textContent("body")).includes("Au suivant"));
+
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+const ligneInjoignable = await page.textContent(`tbody tr:has-text("${nomSuivant}")`);
+verifie("le praticien est marqué injoignable dans la liste", ligneInjoignable.includes("Injoignable"), ligneInjoignable.replace(/\s+/g, " ").slice(0, 80));
+verifie(
+  "il ne compte pas comme appelé",
+  (await page.textContent("aside")).includes("1 / 25 appelés"),
+  (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
+);
+
+console.log("\n7. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
+const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
+verifie("aucune ligne vide créée pour l'injoignable", appelsEncodes === 1, `${appelsEncodes} ligne(s)`);
 const ligneJournee = await page.textContent(`tbody tr:has-text("${A.premierNom}")`);
 verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), ligneJournee.replace(/\s+/g, " ").slice(0, 90));
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n7. Suivi et données sur deux colonnes");
+console.log("\n8. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -134,7 +161,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n8. Aide clavier");
+console.log("\n9. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -142,7 +169,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n9. Langue de l'interface");
+console.log("\n10. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -177,7 +204,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n10. Aucune erreur JavaScript");
+console.log("\n11. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

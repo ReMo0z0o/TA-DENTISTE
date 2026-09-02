@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Area, Block, Bouton, Case, Choice, Field, Puce } from "../components/ui.jsx";
 import {
   COLUMN_BY_KEY,
+  ETATS_PROSPECT,
+  aDesReponses,
   INFO_PRIX,
   MEME_CABINET,
   OUI_NON,
@@ -19,6 +21,10 @@ import { visible } from "../lib/regles.js";
 import { nowTime, frDate } from "../lib/dates.js";
 import { scenario } from "../lib/scenario.js";
 import { useT } from "../lib/i18n.js";
+
+// « à appeler » est l'état de départ, pas une suite à donner après un appel
+const SUITES = ETATS_PROSPECT.filter((e) => e.key !== "a_appeler");
+const LIBELLE_ETAT = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e.label]));
 
 function Identite({ call, set, fiche, ouvert, setOuvert }) {
   const t = useT();
@@ -197,6 +203,9 @@ export default function AppelScreen({
   const manquants = champsManquants(call);
   const rdvOui = call.rdvPossible === "oui";
   const rdvNon = call.rdvPossible === "non";
+  const suite = call.etatFiche || "fait";
+  // une fiche sans aucune réponse ne doit pas produire de ligne dans l'export
+  const exportable = suite === "fait" || aDesReponses(call);
 
   return (
     <div className="pb-28 lg:pb-0 xl:grid xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start xl:gap-6">
@@ -419,13 +428,34 @@ export default function AppelScreen({
           </Block>
         )}
 
+        {fiche && (
+          <Block title={t("Suite à donner")}>
+            <Choice
+              hint={t("Par défaut « Fait ». À changer si le cabinet est injoignable ou s'il faut rappeler.")}
+              options={SUITES.map((e) => e.key)}
+              value={call.etatFiche || "fait"}
+              onChange={(cle) => set("etatFiche")(cle || "fait")}
+              rendu={(cle) => t(LIBELLE_ETAT[cle])}
+            />
+            {!exportable && (
+              <div className="rounded-lg bg-slate-100 px-3 py-2 text-[12.5px] text-slate-600">
+                {t("Rien n'a encore été encodé : aucune ligne ne partira dans le fichier Excel, le praticien est simplement marqué dans la liste.")}
+              </div>
+            )}
+          </Block>
+        )}
+
         <div
           className="fixed right-0 bottom-[56px] left-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:sticky lg:right-auto lg:bottom-0 lg:left-auto lg:rounded-t-xl lg:border-x lg:px-3"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
         >
           <div className="mx-auto flex max-w-2xl items-center gap-2 lg:max-w-none">
             <Bouton onClick={onSave} className="flex-1 lg:flex-none">
-              {editing ? t("Mettre à jour l'appel") : t("Enregistrer et passer au suivant")}
+              {editing
+                ? t("Mettre à jour l'appel")
+                : suite === "fait"
+                  ? t("Enregistrer et passer au suivant")
+                  : t("Marquer « {etat} » et passer au suivant", { etat: t(LIBELLE_ETAT[suite]) })}
             </Bouton>
             <span className="hidden text-[11.5px] text-slate-400 lg:inline">
               <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">Ctrl</kbd> +{" "}

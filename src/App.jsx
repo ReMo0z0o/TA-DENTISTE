@@ -7,11 +7,13 @@ import ListeScreen from "./screens/ListeScreen.jsx";
 import JourneeScreen from "./screens/JourneeScreen.jsx";
 import SuiviScreen from "./screens/SuiviScreen.jsx";
 import DonneesScreen from "./screens/DonneesScreen.jsx";
-import { besoinRappel, emptyCall, phoneKey, rdvPris } from "./lib/model.js";
+import { ETATS_PROSPECT, aDesReponses, besoinRappel, emptyCall, phoneKey, rdvPris } from "./lib/model.js";
 import { applique, majAnnulation } from "./lib/regles.js";
 import { charge, enregistre, etatVide, fusionneSauvegarde, nouvelId } from "./lib/storage.js";
 import { nowTime, today } from "./lib/dates.js";
 import { CODES_LANGUE, FournisseurLangue, LANGUES, creeTraducteur, langueParDefaut } from "./lib/i18n.js";
+
+const LIBELLE_ETAT = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e.label]));
 
 const ONGLETS = [
   ["liste", "Liste", "Qui reste à appeler"],
@@ -156,10 +158,14 @@ export default function App() {
 
   if (!etat) return <div className="p-6 text-sm text-slate-500">{t("Chargement…")}</div>;
 
+  /** Suite à donner à afficher : celle de l'appel, sinon celle du praticien. */
+  const suiteDe = (call, fiche) =>
+    call?.etatFiche || (fiche && fiche.etat !== "a_appeler" ? fiche.etat : "fait");
+
   const ouvreAppel = (fiche) => {
     const existant = etat.calls.find((c) => c.prospectId === fiche.id);
     if (existant) {
-      setCall({ ...emptyCall(), ...existant });
+      setCall({ ...emptyCall(), ...existant, etatFiche: suiteDe(existant, fiche) });
       setEditing(existant.id);
     } else {
       setCall(
@@ -171,6 +177,8 @@ export default function App() {
           dateAppel: today(),
           heureAppel: nowTime(),
           prospectId: fiche.id,
+          // on repart de « fait » sauf si le praticien porte déjà une autre suite
+          etatFiche: fiche.etat === "a_appeler" ? "fait" : fiche.etat,
         })
       );
       setEditing(null);
@@ -194,13 +202,22 @@ export default function App() {
       createdAt: call.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+    const suite = complet.etatFiche || "fait";
     const existe = etat.calls.some((c) => c.id === complet.id);
+    // un cabinet injoignable dont rien n'a été encodé ne doit pas laisser une
+    // ligne vide dans le fichier de réponses : on ne marque que la fiche
+    const garde = existe || suite === "fait" || aDesReponses(complet);
+
     majEtat((e) => ({
-      calls: existe ? e.calls.map((c) => (c.id === complet.id ? complet : c)) : [...e.calls, complet],
-      prospects: e.prospects.map((p) => (p.id === complet.prospectId ? { ...p, etat: "fait" } : p)),
+      calls: existe
+        ? e.calls.map((c) => (c.id === complet.id ? complet : c))
+        : garde
+          ? [...e.calls, complet]
+          : e.calls,
+      prospects: e.prospects.map((p) => (p.id === complet.prospectId ? { ...p, etat: suite } : p)),
       reglages: { ...e.reglages, province: complet.province || e.reglages.province, statut: complet.statut || e.reglages.statut },
     }));
-    return complet;
+    return { ...complet, garde, suite };
   };
 
   const enregistreEtSuivant = () => {
@@ -208,9 +225,18 @@ export default function App() {
     if (!complet) return;
     const suivante = prochaineFiche(complet.prospectId);
     setEditing(null);
+    const marque = complet.suite !== "fait";
     if (suivante) {
       ouvreAppel(suivante);
-      flash(t("Appel enregistré. Au suivant : {nom}.", { nom: suivante.nom }));
+      flash(
+        marque
+          ? t("{fiche} : {etat}. Au suivant : {nom}.", {
+              fiche: complet.dentiste,
+              etat: t(LIBELLE_ETAT[complet.suite]),
+              nom: suivante.nom,
+            })
+          : t("Appel enregistré. Au suivant : {nom}.", { nom: suivante.nom })
+      );
     } else {
       setCall(
         emptyCall({
@@ -220,7 +246,11 @@ export default function App() {
           heureAppel: nowTime(),
         })
       );
-      flash(t("Appel enregistré."));
+      flash(
+        marque
+          ? t("{fiche} : {etat}.", { fiche: complet.dentiste, etat: t(LIBELLE_ETAT[complet.suite]) })
+          : t("Appel enregistré.")
+      );
       window.scrollTo({ top: 0 });
     }
   };
@@ -246,7 +276,8 @@ export default function App() {
   };
 
   const editeAppel = (c) => {
-    setCall({ ...emptyCall(), ...c });
+    const fiche = etat.prospects.find((p) => p.id === c.prospectId);
+    setCall({ ...emptyCall(), ...c, etatFiche: suiteDe(c, fiche) });
     setEditing(c.id);
     setOnglet("appel");
     window.scrollTo({ top: 0 });

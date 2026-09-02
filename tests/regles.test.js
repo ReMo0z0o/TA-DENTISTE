@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applique, visible } from "../src/lib/regles.js";
-import { emptyCall, ordreExport, phoneKey, champsManquants, besoinRappel } from "../src/lib/model.js";
+import { ETATS_PROSPECT, aDesReponses, emptyCall, ordreExport, phoneKey, champsManquants, besoinRappel } from "../src/lib/model.js";
 import { isoDate, frDate, jourOuvrableSuivant, dateLongue } from "../src/lib/dates.js";
 import { provinceDeCodePostal, statutDansTexte, provinceDansTexte } from "../src/lib/provinces.js";
 import { tsv, ligneTexte } from "../src/lib/exporters.js";
@@ -126,4 +126,38 @@ test("les champs encore vides sont signalés sans bloquer", () => {
   const manquants = champsManquants(emptyCall({ dentiste: "Test" }));
   assert.ok(manquants.length > 0);
   assert.ok(manquants.includes("Rendez-vous possible ?"));
+});
+
+test("une fiche seulement pré-remplie ne vaut pas une réponse", () => {
+  // les cinq colonnes d'identité viennent de la liste d'appel, pas du cabinet
+  const prerempli = emptyCall({
+    province: "Hainaut",
+    dentiste: "BOURDON, SANDY",
+    statut: "conventionné",
+    dateAppel: "2026-09-01",
+    telephone: "+32 69 64 14 60",
+    heureAppel: "10:24",
+  });
+  assert.equal(aDesReponses(prerempli), false);
+});
+
+test("la moindre réponse rend l'appel exportable", () => {
+  const base = emptyCall({ dentiste: "X", dateAppel: "2026-09-01" });
+  assert.equal(aDesReponses({ ...base, rdvPossible: "non" }), true);
+  assert.equal(aDesReponses({ ...base, hygieniste: "non" }), true);
+  assert.equal(aDesReponses({ ...base, remarques: "répondeur" }), true);
+  assert.equal(aDesReponses({ ...base, prix: "45" }), true);
+  assert.equal(aDesReponses({ ...base, raisonPrecision: "cabinet fermé" }), true);
+});
+
+test("la suite à donner vaut « fait » par défaut", () => {
+  assert.equal(emptyCall().etatFiche, "fait");
+  assert.equal(emptyCall({ etatFiche: "injoignable" }).etatFiche, "injoignable");
+});
+
+test("la suite à donner correspond aux états de la liste d'appel", () => {
+  const cles = ETATS_PROSPECT.map((e) => e.key);
+  for (const suite of ["fait", "rappeler", "injoignable", "ignore"]) {
+    assert.ok(cles.includes(suite), `état « ${suite} » inconnu de la liste d'appel`);
+  }
 });

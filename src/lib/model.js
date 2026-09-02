@@ -167,6 +167,8 @@ export function emptyCall(defaults = {}) {
     prospectId: null,
     // précision libre quand la raison du refus est « autres »
     raisonPrecision: "",
+    // suite à donner au praticien dans la liste d'appel (voir ETATS_PROSPECT)
+    etatFiche: "fait",
     // second appel, le lendemain, avec le profil « intervention majorée »
     rappel: { date: "", rdvObtenu: "", dateRdv: "", remarque: "" },
     // scénario C : le dentiste Y proposé par le cabinet, rattaché au dentiste X
@@ -235,6 +237,19 @@ export function besoinRappel(call) {
 /** Un rendez-vous a-t-il été pris (et donc à annuler) ? */
 export function rdvPris(call) {
   return call.rdvPossible === "oui" && Boolean(call.datePremierRdv || call.dateSansSupplement);
+}
+
+// ces cinq colonnes sont pré-remplies depuis la liste : leur présence ne veut
+// pas dire qu'on a obtenu des réponses
+const COLONNES_IDENTITE = ["province", "dentiste", "statut", "dateAppel", "telephone"];
+
+/**
+ * L'appel a-t-il donné quelque chose à mettre dans le fichier de réponses ?
+ * Un cabinet injoignable ne doit pas produire une ligne vide.
+ */
+export function aDesReponses(call) {
+  if (String(call.raisonPrecision || "").trim()) return true;
+  return COLUMN_KEYS.some((cle) => !COLONNES_IDENTITE.includes(cle) && String(call[cle] ?? "").trim() !== "");
 }
 
 /** Champs manquants à signaler avant l'enregistrement (jamais bloquant). */

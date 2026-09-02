@@ -118,6 +118,14 @@ const NL = {
   "Copie refusée par le navigateur.": "De browser weigerde het kopiëren.",
 
   /* --- formulaire d'appel --- */
+  "Suite à donner": "Wat volgt",
+  "Par défaut « Fait ». À changer si le cabinet est injoignable ou s'il faut rappeler.":
+    "Standaard « Gedaan ». Pas aan als de praktijk onbereikbaar is of als je moet terugbellen.",
+  "Rien n'a encore été encodé : aucune ligne ne partira dans le fichier Excel, le praticien est simplement marqué dans la liste.":
+    "Er is nog niets gecodeerd: er gaat geen rij naar het Excel-bestand, de beoefenaar wordt enkel in de lijst gemarkeerd.",
+  "Marquer « {etat} » et passer au suivant": "« {etat} » markeren en naar de volgende",
+  "{fiche} : {etat}. Au suivant : {nom}.": "{fiche}: {etat}. Volgende: {nom}.",
+  "{fiche} : {etat}.": "{fiche}: {etat}.",
   "Prochain praticien à appeler": "Volgende beoefenaar om te bellen",
   "Ouvrir sa fiche": "Fiche openen",
   "Le dentiste": "De tandarts",
@@ -491,6 +499,14 @@ const EN = {
   "Copie refusée par le navigateur.": "The browser refused to copy.",
 
   /* --- call form --- */
+  "Suite à donner": "What next",
+  "Par défaut « Fait ». À changer si le cabinet est injoignable ou s'il faut rappeler.":
+    "“Done” by default. Change it if the practice is unreachable or needs calling back.",
+  "Rien n'a encore été encodé : aucune ligne ne partira dans le fichier Excel, le praticien est simplement marqué dans la liste.":
+    "Nothing recorded yet: no row will go into the Excel file, the practitioner is just marked in the list.",
+  "Marquer « {etat} » et passer au suivant": "Mark “{etat}” and go to the next one",
+  "{fiche} : {etat}. Au suivant : {nom}.": "{fiche}: {etat}. Next: {nom}.",
+  "{fiche} : {etat}.": "{fiche}: {etat}.",
   "Prochain praticien à appeler": "Next practitioner to call",
   "Ouvrir sa fiche": "Open their record",
   "Le dentiste": "The dentist",

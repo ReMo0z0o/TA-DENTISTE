@@ -29,8 +29,13 @@ export function Label({ children, hint, htmlFor }) {
   );
 }
 
-export function Choice({ label, hint, options, value, onChange, auto }) {
+/**
+ * Groupe de réponses. `options` porte les valeurs enregistrées ; `rendu`
+ * permet d'afficher autre chose que la valeur elle-même.
+ */
+export function Choice({ label, hint, options, value, onChange, auto, rendu }) {
   const t = useT();
+  const libelle = rendu || ((o) => t.valeur(o));
   // les flèches déplacent la sélection dans le groupe : encodage au clavier
   const auClavier = (e) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -63,7 +68,7 @@ export function Choice({ label, hint, options, value, onChange, auto }) {
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 active:bg-slate-100")
               }
             >
-              {t.valeur(o)}
+              {libelle(o)}
             </button>
           );
         })}

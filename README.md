@@ -128,6 +128,17 @@ l'être :
 - question sur l'intervention majorée ou le registre national → la fiche part
   automatiquement dans les rappels du lendemain.
 
+**Suite à donner** — en bas de la fiche, un choix décide de ce qu'il advient du
+praticien : **Fait** (par défaut), **À rappeler**, **Injoignable** ou **Écarté**.
+Le bouton d'enregistrement enchaîne sur le praticien suivant dans tous les cas :
+plus besoin de repasser par la liste pour corriger un statut.
+
+Un cabinet qui ne décroche pas ne produit **aucune ligne** dans le fichier Excel :
+si rien n'a été encodé et que la suite n'est pas « Fait », seule la fiche est
+marquée dans la liste. L'application le dit à l'écran avant d'enregistrer. Si
+tu as déjà obtenu des réponses partielles, elles sont conservées et la ligne
+part quand même — utile pour « à rappeler » après un premier contact.
+
 Le bouton **Scénario** — barre latérale au bureau, en haut à droite sur
 téléphone — ouvre à tout moment la phrase d'ouverture, les réponses aux questions
 du secrétariat et les scénarios A, B et C. Au bureau, ces réponses restent
