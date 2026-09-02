@@ -9,7 +9,7 @@ import SuiviScreen from "./screens/SuiviScreen.jsx";
 import DonneesScreen from "./screens/DonneesScreen.jsx";
 import { besoinRappel, emptyCall, phoneKey, rdvPris } from "./lib/model.js";
 import { applique, majAnnulation } from "./lib/regles.js";
-import { charge, enregistre, etatVide, nouvelId } from "./lib/storage.js";
+import { charge, enregistre, etatVide, fusionneSauvegarde, nouvelId } from "./lib/storage.js";
 import { nowTime, today } from "./lib/dates.js";
 import { CODES_LANGUE, FournisseurLangue, LANGUES, creeTraducteur, langueParDefaut } from "./lib/i18n.js";
 
@@ -295,22 +295,7 @@ export default function App() {
         "\n" +
         t("Annuler = compléter sans rien effacer")
     );
-    majEtat((e) => {
-      if (remplacer) {
-        return {
-          prospects,
-          calls: calls.map((c) => ({ ...emptyCall(), ...c })),
-          reglages: { ...e.reglages, ...(data.reglages || {}) },
-          suivi: { ...e.suivi, ...(data.suivi || {}) },
-        };
-      }
-      const idsCalls = new Set(e.calls.map((c) => c.id));
-      const clesProspects = new Set(e.prospects.map((p) => `${p.nom}|${phoneKey(p.telephone)}`));
-      return {
-        prospects: [...e.prospects, ...prospects.filter((p) => !clesProspects.has(`${p.nom}|${phoneKey(p.telephone)}`))],
-        calls: [...e.calls, ...calls.filter((c) => !idsCalls.has(c.id)).map((c) => ({ ...emptyCall(), ...c }))],
-      };
-    });
+    majEtat((e) => fusionneSauvegarde(e, data, remplacer));
     flash(remplacer ? t("Sauvegarde chargée.") : t("Sauvegarde ajoutée à ce qui existait déjà."));
   };
 

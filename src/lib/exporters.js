@@ -79,16 +79,21 @@ export function remplirModele(buffer, calls, startRow) {
 
 export { templateFirstFreeRow };
 
-/** Sauvegarde complète : appels, liste d'appel, réglages. */
+/**
+ * Sauvegarde complète : liste d'appel, appels (avec leurs rappels et leurs
+ * annulations), contrôles du registre national et réglages. Tout ce que
+ * l'application sait doit pouvoir repartir sur un autre appareil.
+ */
 export function sauvegarde(etat) {
   return JSON.stringify(
     {
       app: "ta-dentiste",
-      version: 2,
+      version: 3,
       exporteLe: new Date().toISOString(),
       reglages: etat.reglages,
       prospects: etat.prospects,
       calls: etat.calls,
+      suivi: etat.suivi,
     },
     null,
     2

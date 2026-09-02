@@ -9,7 +9,7 @@
     "build": "vite build && node build-single.mjs",
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.js\"",
-    "test:e2e": "npm run build && node tests/e2e.mjs && node tests/e2e-bureau.mjs"
+    "test:e2e": "npm run build && node tests/e2e.mjs && node tests/e2e-bureau.mjs && node tests/e2e-sauvegarde.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

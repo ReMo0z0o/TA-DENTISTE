@@ -165,10 +165,21 @@ Quatre sorties, de la plus directe à la plus souple :
 
 ### 6. Changer d'appareil
 
-« Sauvegarde `.json` » télécharge tout (liste d'appel, appels, suivi, réglages).
+« Sauvegarde `.json` » télécharge **tout** ce que l'application sait :
+
+- la liste d'appel avec l'état de chaque praticien (à appeler, fait, injoignable…) ;
+- les appels encodés, colonnes du fichier Excel, heure et remarques comprises ;
+- **le suivi** : rappels avec le profil « intervention majorée » (date, rendez-vous
+  obtenu), dates d'annulation calculées et annulations faites, contrôles
+  hebdomadaires du registre national ;
+- le lien dentiste X / dentiste Y du scénario C, et les réglages de travail.
+
 Sur l'autre appareil, le même fichier se charge depuis « Charger une liste
-d'appel » : au choix **remplacer** ou **compléter** ce qui s'y trouve déjà. Un
-code de reprise à copier-coller fait la même chose si le fichier ne passe pas.
+d'appel » : au choix **remplacer** ou **compléter** ce qui s'y trouve déjà. En
+mode « compléter », rien n'est effacé et les deux suivis fusionnent sans
+doublon ; recharger deux fois la même sauvegarde ne duplique rien. Seule la
+langue d'affichage reste propre à chaque appareil. Un code de reprise à
+copier-coller fait la même chose si le fichier ne passe pas.
 
 L'appel en cours de saisie est lui aussi enregistré en continu : fermer l'onglet
 par erreur ne fait rien perdre.
@@ -188,7 +199,8 @@ src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, exp
 src/screens/  Liste · Appel · Journée · Suivi · Données
 src/components/ briques d'interface, panneau d'import, scénario, raccourcis
 docs/         l'application construite, en un seul fichier
-tests/        tests unitaires + parcours navigateur (e2e.mjs téléphone, e2e-bureau.mjs bureau)
+tests/        tests unitaires + parcours navigateur (e2e.mjs téléphone, e2e-bureau.mjs
+              bureau, e2e-sauvegarde.mjs changement d'appareil)
 ```
 
 ### Commandes
@@ -198,7 +210,7 @@ npm install
 npm run dev        # développement
 npm run build      # reconstruit docs/index.html (à refaire après toute modification)
 npm test           # tests unitaires (Node)
-npm run test:e2e   # deux parcours complets dans Chromium : téléphone puis bureau
+npm run test:e2e   # trois parcours dans Chromium : téléphone, bureau, changement d'appareil
 ```
 
 Côté traduction, les tests refusent toute clé sans traduction, toute traduction

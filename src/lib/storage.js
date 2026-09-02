@@ -1,3 +1,5 @@
+import { emptyCall, phoneKey } from "./model.js";
+
 // Tout reste sur l'appareil : rien n'est envoyé sur un serveur.
 // Le passage d'un appareil à l'autre se fait par le fichier .json de sauvegarde.
 
@@ -47,4 +49,44 @@ export function enregistre(etat) {
 /** Identifiant court et unique, stable d'un appareil à l'autre. */
 export function nouvelId(prefixe = "c") {
   return `${prefixe}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/**
+ * Fusionne une sauvegarde avec l'état de l'appareil.
+ * `remplacer` : true = la sauvegarde fait foi, false = on complète sans rien
+ * effacer. Dans les deux cas, TOUT est repris : liste d'appel, appels (avec
+ * leurs rappels et leurs annulations) et contrôles du registre national.
+ * La langue reste celle de l'appareil : c'est un réglage d'affichage local.
+ */
+export function fusionneSauvegarde(etat, data, remplacer) {
+  const prospects = Array.isArray(data?.prospects) ? data.prospects : [];
+  // une très vieille sauvegarde pouvait n'être qu'un tableau d'appels
+  const calls = Array.isArray(data?.calls) ? data.calls : Array.isArray(data) ? data : [];
+  const controles = Array.isArray(data?.suivi?.controlesRegistre) ? data.suivi.controlesRegistre : [];
+  const complet = (call) => ({ ...emptyCall(), ...call });
+
+  if (remplacer) {
+    return {
+      prospects,
+      calls: calls.map(complet),
+      reglages: { ...etat.reglages, ...(data?.reglages || {}), langue: etat.reglages.langue },
+      suivi: { ...etat.suivi, controlesRegistre: [...controles].sort() },
+    };
+  }
+
+  const idsCalls = new Set(etat.calls.map((c) => c.id));
+  const clesProspects = new Set(etat.prospects.map((p) => cleProspect(p)));
+  return {
+    prospects: [...etat.prospects, ...prospects.filter((p) => !clesProspects.has(cleProspect(p)))],
+    calls: [...etat.calls, ...calls.filter((c) => !idsCalls.has(c.id)).map(complet)],
+    suivi: {
+      ...etat.suivi,
+      controlesRegistre: [...new Set([...etat.suivi.controlesRegistre, ...controles])].sort(),
+    },
+  };
+}
+
+/** Deux fiches sont la même si le nom et le numéro correspondent. */
+function cleProspect(fiche) {
+  return `${fiche.nom}|${phoneKey(fiche.telephone)}`;
 }
