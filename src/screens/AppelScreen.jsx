@@ -319,6 +319,11 @@ export default function AppelScreen({
                   onChange={set("orienteAutreCabinet")}
                 />
               </div>
+              {(call.orienteMemePratique === "oui" || call.orienteAutreCabinet === "oui") && !parent && (
+                <div className="rounded-lg bg-amber-100 px-3 py-2 text-[12.5px] text-amber-900">
+                  {t("Un autre dentiste vous a été proposé : encode-le avec le bouton « Enregistrer et encoder le dentiste Y » en bas de page. Il rejoindra ta liste, marqué « dentiste Y ».")}
+                </div>
+              )}
             </>
           )}
 

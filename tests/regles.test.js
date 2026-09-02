@@ -2,7 +2,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applique, visible } from "../src/lib/regles.js";
-import { ETATS_PROSPECT, aDesReponses, emptyCall, ordreExport, phoneKey, champsManquants, besoinRappel } from "../src/lib/model.js";
+import {
+  ETATS_PROSPECT,
+  aDesReponses,
+  emptyCall,
+  emptyProspect,
+  estOriente,
+  fichesDeLaMission,
+  ordreExport,
+  phoneKey,
+  champsManquants,
+  besoinRappel,
+} from "../src/lib/model.js";
 import { isoDate, frDate, jourOuvrableSuivant, dateLongue } from "../src/lib/dates.js";
 import { provinceDeCodePostal, statutDansTexte, provinceDansTexte } from "../src/lib/provinces.js";
 import { tsv, ligneTexte } from "../src/lib/exporters.js";
@@ -160,4 +171,35 @@ test("la suite à donner correspond aux états de la liste d'appel", () => {
   for (const suite of ["fait", "rappeler", "injoignable", "ignore"]) {
     assert.ok(cles.includes(suite), `état « ${suite} » inconnu de la liste d'appel`);
   }
+});
+
+test("un dentiste Y se distingue d'un praticien du fichier", () => {
+  const duFichier = emptyProspect({ id: "p1", nom: "BOURDON, SANDY" });
+  const oriente = emptyProspect({ id: "p2", nom: "DUPONT, CLAIRE", origine: "oriente", orientePar: "BOURDON, SANDY" });
+  assert.equal(estOriente(duFichier), false);
+  assert.equal(estOriente(oriente), true);
+  assert.equal(duFichier.origine, "liste", "une fiche importée l'est par défaut");
+});
+
+test("le quota de la mission ignore les dentistes Y", () => {
+  const prospects = [
+    emptyProspect({ id: "p1", etat: "fait" }),
+    emptyProspect({ id: "p2", etat: "a_appeler" }),
+    emptyProspect({ id: "y1", etat: "fait", origine: "oriente" }),
+  ];
+  const mission = fichesDeLaMission(prospects);
+  assert.equal(mission.length, 2, "seuls les praticiens du fichier comptent");
+  assert.equal(prospects.filter(estOriente).length, 1);
+});
+
+test("le dentiste Y partage le numéro du cabinet sans être un doublon", () => {
+  // le scénario interdit d'appeler deux fois le même cabinet, mais le dentiste Y
+  // exerce dans la même pratique : son numéro est légitimement identique
+  const prospects = [
+    emptyProspect({ id: "x", nom: "EL AHMADI, MALIKA", telephone: "+32 67 49 02 95" }),
+    emptyProspect({ id: "y", nom: "DUPONT, CLAIRE", telephone: "+32 67 49 02 95", origine: "oriente" }),
+  ];
+  const aSignaler = prospects.filter((f) => !estOriente(f) && phoneKey(f.telephone));
+  assert.equal(aSignaler.length, 1, "seul le praticien du fichier entre dans la détection");
+  assert.equal(phoneKey(prospects[0].telephone), phoneKey(prospects[1].telephone), "les numéros sont bien identiques");
 });

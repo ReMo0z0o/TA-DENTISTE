@@ -145,8 +145,19 @@ du secrétariat et les scénarios A, B et C. Au bureau, ces réponses restent
 affichées en permanence à côté du formulaire.
 
 **Pratique de groupe (scénario C)** : le bouton « Enregistrer et encoder le
-dentiste Y » crée une seconde fiche rattachée à la première. À l'export, elle est
-placée juste après le dentiste X et surlignée en jaune, comme demandé.
+dentiste Y » crée une seconde fiche rattachée à la première. Dès que tu réponds
+« oui » à une question d'orientation, l'application te le rappelle à l'écran.
+
+Le dentiste Y **rejoint la liste d'appel** une fois encodé, juste sous le
+dentiste qui l'a proposé, et se repère au premier coup d'œil : fond ambre,
+étiquette **dentiste Y**, mention « proposé par … », et un filtre dédié dans la
+barre de filtres. Il hérite de l'adresse et de la commune du cabinet.
+
+Deux précautions : il **ne compte pas dans le quota** de la mission (la barre
+d'avancement reste sur les praticiens du fichier reçu, avec un « + n dentiste Y
+ajouté » à part), et il n'est **pas signalé comme doublon** alors qu'il partage
+le numéro de sa pratique de groupe. À l'export, il reste placé juste après le
+dentiste X et surligné en jaune, comme demandé.
 
 ### 4. Suivre — onglet **Suivi**
 

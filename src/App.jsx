@@ -7,13 +7,31 @@ import ListeScreen from "./screens/ListeScreen.jsx";
 import JourneeScreen from "./screens/JourneeScreen.jsx";
 import SuiviScreen from "./screens/SuiviScreen.jsx";
 import DonneesScreen from "./screens/DonneesScreen.jsx";
-import { ETATS_PROSPECT, aDesReponses, besoinRappel, emptyCall, phoneKey, rdvPris } from "./lib/model.js";
+import {
+  ETATS_PROSPECT,
+  aDesReponses,
+  besoinRappel,
+  emptyCall,
+  emptyProspect,
+  estOriente,
+  fichesDeLaMission,
+  phoneKey,
+  rdvPris,
+} from "./lib/model.js";
 import { applique, majAnnulation } from "./lib/regles.js";
 import { charge, enregistre, etatVide, fusionneSauvegarde, nouvelId } from "./lib/storage.js";
 import { nowTime, today } from "./lib/dates.js";
 import { CODES_LANGUE, FournisseurLangue, LANGUES, creeTraducteur, langueParDefaut } from "./lib/i18n.js";
 
 const LIBELLE_ETAT = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e.label]));
+
+/** Place la fiche juste après celle qui l'a proposée, comme dans l'export. */
+function inserePres(prospects, fiche) {
+  if (!fiche) return prospects;
+  const index = prospects.findIndex((p) => p.id === fiche.orienteDe);
+  if (index < 0) return [...prospects, fiche];
+  return [...prospects.slice(0, index + 1), fiche, ...prospects.slice(index + 1)];
+}
 
 const ONGLETS = [
   ["liste", "Liste", "Qui reste à appeler"],
@@ -204,6 +222,30 @@ export default function App() {
     });
     const suite = complet.etatFiche || "fait";
     const existe = etat.calls.some((c) => c.id === complet.id);
+
+    // scénario C : le dentiste Y n'est dans aucun fichier, on lui crée sa fiche
+    // pour qu'il apparaisse dans la liste comme les autres, clairement marqué
+    let nouvelleFiche = null;
+    if (complet.roleY && !complet.prospectId && complet.dentiste.trim()) {
+      const parent = etat.calls.find((c) => c.id === complet.groupeDe);
+      const ficheParent = parent ? etat.prospects.find((p) => p.id === parent.prospectId) : null;
+      nouvelleFiche = emptyProspect({
+        id: nouvelId("p"),
+        nom: complet.dentiste,
+        telephone: complet.telephone,
+        province: complet.province,
+        statut: complet.statut,
+        // même cabinet : l'adresse du dentiste X est la bonne
+        adresse: ficheParent?.adresse || "",
+        commune: ficheParent?.commune || "",
+        cp: ficheParent?.cp || "",
+        etat: suite,
+        origine: "oriente",
+        orienteDe: ficheParent?.id || null,
+        orientePar: parent?.dentiste || "",
+      });
+      complet.prospectId = nouvelleFiche.id;
+    }
     // un cabinet injoignable dont rien n'a été encodé ne doit pas laisser une
     // ligne vide dans le fichier de réponses : on ne marque que la fiche
     const garde = existe || suite === "fait" || aDesReponses(complet);
@@ -214,7 +256,10 @@ export default function App() {
         : garde
           ? [...e.calls, complet]
           : e.calls,
-      prospects: e.prospects.map((p) => (p.id === complet.prospectId ? { ...p, etat: suite } : p)),
+      prospects: inserePres(
+        e.prospects.map((p) => (p.id === complet.prospectId ? { ...p, etat: suite } : p)),
+        nouvelleFiche
+      ),
       reglages: { ...e.reglages, province: complet.province || e.reglages.province, statut: complet.statut || e.reglages.statut },
     }));
     return { ...complet, garde, suite };
@@ -335,8 +380,12 @@ export default function App() {
   const enAttente = etat.calls.filter((c) => besoinRappel(c) && !c.rappelFait).length;
   const aAnnuler = etat.calls.filter((c) => rdvPris(c) && !c.annulation?.faiteLe).length;
   const badges = { suivi: enAttente + aAnnuler };
-  const faits = etat.prospects.filter((p) => p.etat === "fait").length;
-  const pourcent = etat.prospects.length ? Math.round((faits / etat.prospects.length) * 100) : 0;
+  // le quota de la mission porte sur le fichier reçu : les dentistes vers
+  // lesquels on nous oriente s'ajoutent, ils ne remplacent personne
+  const fichesMission = fichesDeLaMission(etat.prospects);
+  const orientes = etat.prospects.filter(estOriente).length;
+  const faits = fichesMission.filter((p) => p.etat === "fait").length;
+  const pourcent = fichesMission.length ? Math.round((faits / fichesMission.length) * 100) : 0;
 
   const ecran = (
     <>
@@ -473,13 +522,18 @@ export default function App() {
           <div className="border-t border-slate-200 px-4 py-3">
             <div className="flex items-baseline justify-between text-[12px]">
               <span className="font-medium text-slate-700">
-                {t("{faits} / {total} appelés", { faits, total: etat.prospects.length })}
+                {t("{faits} / {total} appelés", { faits, total: fichesMission.length })}
               </span>
               <span className="text-slate-500">{t("{n} restants", { n: prochaines.length })}</span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
               <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${pourcent}%` }} />
             </div>
+            {orientes > 0 && (
+              <div className="mt-1.5 text-[11px] text-amber-700">
+                {t.n(orientes, "+ {n} dentiste Y ajouté", "+ {n} dentistes Y ajoutés")}
+              </div>
+            )}
           </div>
         )}
 

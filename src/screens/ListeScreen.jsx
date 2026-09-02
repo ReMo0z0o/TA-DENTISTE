@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, Vide, useRaccourciRecherche } from "../components/ui.jsx";
-import { ETATS_PROSPECT, phoneKey, telHref } from "../lib/model.js";
+import { ETATS_PROSPECT, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
 import { useT } from "../lib/i18n.js";
 
@@ -51,13 +51,24 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
   const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
   const tel = telHref(fiche.telephone);
   return (
-    <li className="mb-2 rounded-xl border border-slate-200 bg-white p-3">
+    <li
+      className={
+        "mb-2 rounded-xl border p-3 " +
+        (estOriente(fiche) ? "border-amber-300 bg-amber-50/60" : "border-slate-200 bg-white")
+      }
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {fiche.ordre && <span className="text-[12px] text-slate-400">{fiche.ordre}</span>}
             <span className="truncate text-[15px] font-medium text-slate-900">{fiche.nom}</span>
+            {estOriente(fiche) && <Puce tone="amber">{t("dentiste Y")}</Puce>}
           </div>
+          {estOriente(fiche) && fiche.orientePar && (
+            <div className="mt-0.5 text-[11.5px] text-amber-700">
+              {t("proposé par {nom}", { nom: fiche.orientePar })}
+            </div>
+          )}
           <div className="mt-0.5 truncate text-[12px] text-slate-500">
             {[fiche.commune, fiche.cp, fiche.province].filter(Boolean).join(" · ")}
           </div>
@@ -161,7 +172,8 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
       }}
       onDoubleClick={() => onEncoder(fiche)}
       className={
-        "border-t border-slate-100 align-middle hover:bg-slate-50 focus:bg-teal-50 focus:outline-none " +
+        "border-t border-slate-100 align-middle focus:bg-teal-50 focus:outline-none " +
+        (estOriente(fiche) ? "bg-amber-50/60 hover:bg-amber-50 " : "hover:bg-slate-50 ") +
         (fiche.etat === "fait" ? "text-slate-500" : "")
       }
     >
@@ -173,12 +185,21 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
         >
           {fiche.nom}
         </button>
+        {estOriente(fiche) && (
+          <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-amber-800">
+            {t("dentiste Y")}
+          </span>
+        )}
         {doublon && (
           <span className="ml-2 text-[11px] text-red-700" title={t("Même numéro que {nom}", { nom: doublon })}>
             {t("doublon")}
           </span>
         )}
-        {fiche.adresse && <div className="text-[11.5px] text-slate-500">{fiche.adresse}</div>}
+        {estOriente(fiche) && fiche.orientePar ? (
+          <div className="text-[11.5px] text-amber-700">{t("proposé par {nom}", { nom: fiche.orientePar })}</div>
+        ) : (
+          fiche.adresse && <div className="text-[11.5px] text-slate-500">{fiche.adresse}</div>
+        )}
       </td>
       <td className="py-1.5 pr-3 text-[12.5px] whitespace-nowrap text-slate-600">
         {fiche.commune}
@@ -252,7 +273,9 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
     const out = new Map();
     for (const f of prospects) {
       const cle = phoneKey(f.telephone);
-      if (!cle) continue;
+      // un dentiste Y partage le numéro de sa pratique de groupe : c'est normal,
+      // ce n'est pas le doublon que le scénario demande d'éviter
+      if (!cle || estOriente(f)) continue;
       if (vus.has(cle)) out.set(f.id, vus.get(cle));
       else vus.set(cle, f.nom);
     }
@@ -262,15 +285,20 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
   const filtres = useMemo(() => {
     const q = sansAccents(recherche.trim());
     return prospects.filter((f) => {
-      if (filtre !== "tous" && f.etat !== filtre) return false;
+      if (filtre === "orientes") {
+        if (!estOriente(f)) return false;
+      } else if (filtre !== "tous" && f.etat !== filtre) return false;
       if (!q) return true;
-      return sansAccents([f.nom, f.commune, f.cp, f.telephone, f.adresse, f.inami].join(" ")).includes(q);
+      return sansAccents([f.nom, f.commune, f.cp, f.telephone, f.adresse, f.inami, f.orientePar].join(" ")).includes(q);
     });
   }, [prospects, filtre, recherche]);
 
-  const faits = prospects.filter((f) => f.etat === "fait").length;
+  // le quota porte sur le fichier de la mission, pas sur les dentistes Y ajoutés
+  const mission = fichesDeLaMission(prospects);
+  const orientes = prospects.filter(estOriente);
+  const faits = mission.filter((f) => f.etat === "fait").length;
   const restants = prospects.filter((f) => f.etat === "a_appeler");
-  const pourcent = prospects.length ? Math.round((faits / prospects.length) * 100) : 0;
+  const pourcent = mission.length ? Math.round((faits / mission.length) * 100) : 0;
 
   if (!prospects.length) {
     return (
@@ -292,7 +320,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3 lg:hidden">
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-medium text-slate-700">
-            {t("{faits} / {total} appelés", { faits, total: prospects.length })}
+            {t("{faits} / {total} appelés", { faits, total: mission.length })}
           </span>
           <span className="text-[12px] text-slate-500">{t("{n} restants", { n: restants.length })}</span>
         </div>
@@ -327,17 +355,31 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       </div>
 
       <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1">
-        {[{ key: "tous", label: "Tous" }, ...ETATS_PROSPECT].map((e) => {
-          const n = e.key === "tous" ? prospects.length : prospects.filter((f) => f.etat === e.key).length;
+        {[
+          { key: "tous", label: "Tous" },
+          ...ETATS_PROSPECT,
+          ...(orientes.length ? [{ key: "orientes", label: "dentiste Y", tone: "amber" }] : []),
+        ].map((e) => {
+          const n =
+            e.key === "tous"
+              ? prospects.length
+              : e.key === "orientes"
+                ? orientes.length
+                : prospects.filter((f) => f.etat === e.key).length;
+          const actif = filtre === e.key;
           return (
             <button
               key={e.key}
               onClick={() => setFiltre(e.key)}
               className={
                 "min-h-[36px] shrink-0 rounded-lg border px-3 py-1.5 text-[12.5px] lg:min-h-[30px] lg:py-1 " +
-                (filtre === e.key
-                  ? "border-teal-800 bg-teal-800 text-white"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400")
+                (actif
+                  ? e.tone === "amber"
+                    ? "border-amber-500 bg-amber-500 text-white"
+                    : "border-teal-800 bg-teal-800 text-white"
+                  : e.tone === "amber"
+                    ? "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400")
               }
             >
               {t(e.label)} {n > 0 && <span className="opacity-70">{n}</span>}

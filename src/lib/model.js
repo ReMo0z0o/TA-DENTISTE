@@ -199,8 +199,23 @@ export function emptyProspect(defaults = {}) {
     statut: "",
     etat: "a_appeler",
     note: "",
+    // « liste » : venu du fichier de praticiens à appeler.
+    // « oriente » : dentiste vers lequel un cabinet nous a orientés (scénario C).
+    origine: "liste",
+    orienteDe: null, // fiche du praticien qui l'a proposé
+    orientePar: "", // son nom, pour l'afficher sans avoir à le retrouver
     ...defaults,
   };
+}
+
+/** Praticien ajouté depuis un appel, et non depuis le fichier de la mission. */
+export function estOriente(fiche) {
+  return fiche?.origine === "oriente";
+}
+
+/** Les praticiens du quota : ceux qui viennent du fichier de la mission. */
+export function fichesDeLaMission(prospects) {
+  return prospects.filter((p) => !estOriente(p));
 }
 
 export const ETATS_PROSPECT = [

@@ -136,17 +136,69 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
 );
 
-console.log("\n7. Journée en tableau");
+console.log("\n7. Dentiste Y du scénario C");
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(250);
+await page.click(`tbody tr:has-text("${A.dernierNom}") button:has-text("Encoder")`);
+await page.waitForTimeout(250);
+// pas de rendez-vous, mais le cabinet oriente vers un confrère
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('non')");
+await page.waitForTimeout(200);
+// premier « oui » = rendez-vous possible, deuxième = orienté vers la même pratique
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui') >> nth=1");
+await page.waitForTimeout(200);
+verifie("l'application invite à encoder le dentiste proposé", await page.isVisible("text=Un autre dentiste vous a été proposé"));
+
+await page.click('button:has-text("Enregistrer et encoder le dentiste Y")');
+await page.waitForTimeout(400);
+verifie("la fiche du dentiste Y s'ouvre", await page.isVisible("text=Scénario C — dentiste Y"));
+await page.click("h2:has-text('Le dentiste') >> xpath=../.. >> button:has-text('Modifier')");
+await page.waitForTimeout(200);
+await page.fill("h2:has-text('Le dentiste') >> xpath=../.. >> input[type='text'] >> nth=0", "DUPONT, CLAIRE");
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
+await page.fill('input[type="date"] >> nth=1', "2026-09-30");
+await page.click("h2:has-text('Hygiéniste') >> xpath=../.. >> button:text-is('non')");
+await page.keyboard.press("Control+Enter");
+await page.waitForTimeout(500);
+
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+const ligneY = await page.textContent('tbody tr:has-text("DUPONT, CLAIRE")');
+verifie("le dentiste Y apparaît dans la liste", Boolean(ligneY), String(ligneY).replace(/\s+/g, " ").slice(0, 90));
+verifie("il porte la marque « dentiste Y »", ligneY.includes("dentiste Y"), ligneY.replace(/\s+/g, " ").slice(0, 90));
+verifie("on voit qui l'a proposé", ligneY.includes(A.dernierNom), ligneY.replace(/\s+/g, " ").slice(0, 120));
+
+const ordreListe = await page.$$eval("tbody tr", (els) => els.map((tr) => tr.textContent));
+const posX = ordreListe.findIndex((l) => l.includes(A.dernierNom) && !l.includes("DUPONT"));
+const posY = ordreListe.findIndex((l) => l.includes("DUPONT, CLAIRE"));
+verifie("il est placé juste après le dentiste X", posY === posX + 1, `X=${posX} Y=${posY}`);
+
+verifie(
+  "il ne gonfle pas le quota de la mission",
+  (await page.textContent("aside")).includes(`/ ${A.praticiens} appelés`),
+  (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
+);
+verifie("la barre latérale annonce l'ajout", (await page.textContent("aside")).includes("dentiste Y ajouté"));
+
+await page.click('button:has-text("dentiste Y")  >> nth=0');
+await page.waitForTimeout(300);
+const filtres2 = await page.$$eval("tbody tr", (els) => els.length);
+verifie("le filtre « dentiste Y » les isole", filtres2 === 1, `${filtres2} ligne(s)`);
+await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
+await page.click("button:text-is('Tous') >> nth=0");
+await page.waitForTimeout(250);
+
+console.log("\n8. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
-verifie("aucune ligne vide créée pour l'injoignable", appelsEncodes === 1, `${appelsEncodes} ligne(s)`);
+verifie("aucune ligne vide créée pour l'injoignable", appelsEncodes === 3, `${appelsEncodes} ligne(s)`);
 const ligneJournee = await page.textContent(`tbody tr:has-text("${A.premierNom}")`);
 verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), ligneJournee.replace(/\s+/g, " ").slice(0, 90));
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n8. Suivi et données sur deux colonnes");
+console.log("\n9. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -161,7 +213,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n9. Aide clavier");
+console.log("\n10. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -169,7 +221,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n10. Langue de l'interface");
+console.log("\n11. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -204,7 +256,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n11. Aucune erreur JavaScript");
+console.log("\n12. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

@@ -126,6 +126,11 @@ const NL = {
   "Marquer « {etat} » et passer au suivant": "« {etat} » markeren en naar de volgende",
   "{fiche} : {etat}. Au suivant : {nom}.": "{fiche}: {etat}. Volgende: {nom}.",
   "{fiche} : {etat}.": "{fiche}: {etat}.",
+  "proposé par {nom}": "voorgesteld door {nom}",
+  "+ {n} dentiste Y ajouté": "+ {n} tandarts Y toegevoegd",
+  "+ {n} dentistes Y ajoutés": "+ {n} tandartsen Y toegevoegd",
+  "Un autre dentiste vous a été proposé : encode-le avec le bouton « Enregistrer et encoder le dentiste Y » en bas de page. Il rejoindra ta liste, marqué « dentiste Y ».":
+    "Er werd een andere tandarts voorgesteld: codeer die met de knop « Bewaren en tandarts Y coderen » onderaan. Hij komt in je lijst, gemarkeerd als « tandarts Y ».",
   "Prochain praticien à appeler": "Volgende beoefenaar om te bellen",
   "Ouvrir sa fiche": "Fiche openen",
   "Le dentiste": "De tandarts",
@@ -507,6 +512,11 @@ const EN = {
   "Marquer « {etat} » et passer au suivant": "Mark “{etat}” and go to the next one",
   "{fiche} : {etat}. Au suivant : {nom}.": "{fiche}: {etat}. Next: {nom}.",
   "{fiche} : {etat}.": "{fiche}: {etat}.",
+  "proposé par {nom}": "offered by {nom}",
+  "+ {n} dentiste Y ajouté": "+ {n} dentist Y added",
+  "+ {n} dentistes Y ajoutés": "+ {n} dentists Y added",
+  "Un autre dentiste vous a été proposé : encode-le avec le bouton « Enregistrer et encoder le dentiste Y » en bas de page. Il rejoindra ta liste, marqué « dentiste Y ».":
+    "Another dentist was offered: record them with the “Save and record dentist Y” button at the bottom. They will join your list, marked “dentist Y”.",
   "Prochain praticien à appeler": "Next practitioner to call",
   "Ouvrir sa fiche": "Open their record",
   "Le dentiste": "The dentist",
