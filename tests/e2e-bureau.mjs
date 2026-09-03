@@ -100,6 +100,12 @@ await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button
 await page.fill('input[type="date"] >> nth=1', "2026-11-12");
 await page.click("button:text-is('sans supplément')");
 // flèches puis espace : répondre sans quitter le clavier
+// le cabinet demande le numéro de registre national : c'est ce qui déclenche
+// le rappel avec l'autre profil, et donc le marquage dans les rendez-vous
+await page.click(
+  '[role="group"][aria-label="Le dentiste a demandé votre numéro de registre national ?"] >> button:text-is("oui")'
+);
+await page.waitForTimeout(150);
 await page.focus("h2:has-text('Hygiéniste') >> xpath=../.. >> button:text-is('oui')");
 await page.keyboard.press("ArrowRight");
 await page.keyboard.press(" ");
@@ -242,6 +248,49 @@ const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
 });
 verifie("le suivi se répartit sur deux colonnes", colonnesSuivi === 2, String(colonnesSuivi));
 
+// les trois rubriques, dans l'ordre : le profil habituel d'abord
+const rubriques = await page.$$eval("section h2", (els) => els.map((e) => e.textContent.trim()));
+const rangHabituel = rubriques.indexOf("Rappels — profil habituel");
+const rangMajoree = rubriques.indexOf("Rappels avec le profil « intervention majorée »");
+verifie(
+  "« Rappels — profil habituel » vient avant « intervention majorée »",
+  rangHabituel === 0 && rangMajoree === 1,
+  rubriques.slice(0, 3).join(" | ")
+);
+verifie(
+  "le cabinet rappelé avec l'autre profil est listé",
+  (await page.textContent("section:has(h2:text-is('Rappels avec le profil « intervention majorée »'))")).includes(A.premierNom),
+  A.premierNom
+);
+
+// un praticien marqué « À rappeler » dans la liste doit se retrouver ici
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(250);
+await page.selectOption(`tbody tr:has-text("${A.troisiemeNom}") select`, { label: "À rappeler" });
+await page.waitForTimeout(300);
+await page.keyboard.press("Alt+4");
+await page.waitForTimeout(300);
+verifie(
+  "un praticien « À rappeler » apparaît dans la rubrique habituelle",
+  (await page.textContent("section:has(h2:text-is('Rappels — profil habituel'))")).includes(A.troisiemeNom),
+  A.troisiemeNom
+);
+
+// les rendez-vous : tous affichés, détaillés, l'intervention majorée marquée
+const cartesRdv = await page.$$eval('[data-role="rendez-vous"]', (els) =>
+  els.map((e) => e.innerText.replace(/\s+/g, " "))
+);
+verifie("tous les rendez-vous placés sont affichés", cartesRdv.length === 2, `${cartesRdv.length} carte(s)`);
+const carteX = cartesRdv.find((c) => c.includes(A.premierNom));
+verifie("le rendez-vous porte la date d'appel", /Appel du \d{2}\/\d{2}\/\d{4}/.test(carteX), carteX?.slice(0, 140));
+verifie("le rendez-vous porte la date du rendez-vous", carteX?.includes("12/11/2026"), carteX?.slice(0, 140));
+verifie("le rendez-vous porte le numéro de téléphone", carteX?.includes(A.premierTel), carteX?.slice(0, 160));
+verifie(
+  "le cabinet à rappeler avec l'autre profil est signalé",
+  carteX?.includes("intervention majorée"),
+  carteX?.slice(0, 160)
+);
+
 // le classeur des rendez-vous placés, pour préparer les annulations
 verifie("les rendez-vous placés sont annoncés", await page.isVisible("text=rendez-vous placés depuis le début"));
 const dlRdv = page.waitForEvent("download");
@@ -252,12 +301,18 @@ const octetsRdv = fs.readFileSync(fichierRdv);
 const classeurRdv = await readXlsx(octetsRdv.buffer.slice(octetsRdv.byteOffset, octetsRdv.byteOffset + octetsRdv.byteLength));
 const lignesRdv = classeurRdv.sheets[0].rows;
 verifie("classeur des rendez-vous téléchargé", classeurRdv.sheets[0].name === "Rendez-vous", classeurRdv.sheets[0].name);
-verifie("une ligne de titres claire", lignesRdv[0][0] === "À annuler à partir du" && lignesRdv[0][2] === "Dentiste", lignesRdv[0].slice(0, 3).join(" | "));
+const colRdv = (titre) => lignesRdv[0].indexOf(titre);
+verifie("une ligne de titres claire", colRdv("À annuler à partir du") === 0 && colRdv("Dentiste") > 0, lignesRdv[0].slice(0, 3).join(" | "));
 verifie("les deux rendez-vous placés y sont", lignesRdv.length === 3, `${lignesRdv.length - 1} rendez-vous`);
-const avecTel = lignesRdv.slice(1).find((l) => l[2] === A.premierNom);
-verifie("le téléphone est là pour annuler", avecTel && avecTel[3] === A.premierTel, String(avecTel && avecTel[3]));
+const avecTel = lignesRdv.slice(1).find((l) => l[colRdv("Dentiste")] === A.premierNom);
+verifie("le téléphone est là pour annuler", avecTel && avecTel[colRdv("Téléphone")] === A.premierTel, String(avecTel && avecTel[colRdv("Téléphone")]));
 verifie("la date d'annulation est une vraie date", /^\d{4}-\d{2}-\d{2}$/.test(avecTel[0]), String(avecTel[0]));
-verifie("le statut d'annulation est explicite", /annuler/i.test(avecTel[1]), String(avecTel[1]));
+verifie("le statut d'annulation est explicite", /annuler/i.test(avecTel[colRdv("Où en est l'annulation")]), String(avecTel[colRdv("Où en est l'annulation")]));
+verifie(
+  "le classeur signale aussi le rappel « intervention majorée »",
+  avecTel[colRdv("Rappel « intervention majorée »")] === "oui",
+  String(avecTel[colRdv("Rappel « intervention majorée »")])
+);
 
 await page.screenshot({ path: path.join(SORTIES, "pc-suivi.png") });
 

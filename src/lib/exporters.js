@@ -1,6 +1,6 @@
 // Sorties : collage Excel, .csv, classeur .xlsx neuf, remplissage du fichier
 // officiel Antwoordtabel, et sauvegarde .json pour changer d'appareil.
-import { COLUMNS, DATE_FIELDS, HEADERS, ordreExport, rdvPris } from "./model.js";
+import { COLUMNS, DATE_FIELDS, HEADERS, besoinRappel, ordreExport, rdvPris } from "./model.js";
 import { frDate, stamp, today } from "./dates.js";
 import { buildXlsx, fillTemplate, templateFirstFreeRow } from "./xlsx.js";
 
@@ -114,6 +114,9 @@ export function rendezVousPlaces(calls, prospects = []) {
         annuleLe: call.annulation?.faiteLe || "",
         dentiste: call.dentiste,
         roleY: Boolean(call.roleY),
+        // ce cabinet est aussi à rappeler avec l'autre profil : au moment
+        // d'annuler, il faut savoir qu'un second appel l'attend
+        interventionMajoree: besoinRappel(call),
         telephone: call.telephone,
         rdvLe: dateRendezVousPris(call),
         tarif: call.supplementPremierRdv || "",
@@ -140,6 +143,7 @@ export const COLONNES_RDV = [
   { cle: "statut", titre: "Où en est l'annulation", largeur: 26 },
   { cle: "dentiste", titre: "Dentiste", largeur: 30 },
   { cle: "telephone", titre: "Téléphone", largeur: 18 },
+  { cle: "rappelProfil", titre: "Rappel « intervention majorée »", largeur: 30 },
   { cle: "rdvLe", titre: "Rendez-vous pris le", type: "date", largeur: 18 },
   { cle: "tarif", titre: "Tarif annoncé", largeur: 22 },
   { cle: "prix", titre: "Prix (€)", type: "nombre", largeur: 10 },
@@ -180,6 +184,7 @@ export function classeurRendezVous(calls, prospects, t = (x) => x) {
       ...ligne,
       statut,
       dentiste: ligne.roleY ? `${ligne.dentiste} (${t("dentiste Y")})` : ligne.dentiste,
+      rappelProfil: ligne.interventionMajoree ? t("oui") : "",
       tarif: t.valeur ? t.valeur(ligne.tarif) : ligne.tarif,
     };
 

@@ -400,9 +400,11 @@ export default function App() {
 
   actions.current = { enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null) };
 
+  // le badge de l'onglet Suivi compte tout ce qui y reste à faire
+  const aRappeler = etat.prospects.filter((p) => p.etat === "rappeler").length;
   const enAttente = etat.calls.filter((c) => besoinRappel(c) && !c.rappelFait).length;
   const aAnnuler = etat.calls.filter((c) => rdvPris(c) && !c.annulation?.faiteLe).length;
-  const badges = { suivi: enAttente + aAnnuler };
+  const badges = { suivi: aRappeler + enAttente + aAnnuler };
   // le quota de la mission porte sur le fichier reçu : les dentistes vers
   // lesquels on nous oriente s'ajoutent, ils ne remplacent personne
   const fichesMission = fichesDeLaMission(etat.prospects);
@@ -467,6 +469,7 @@ export default function App() {
           calls={etat.calls}
           prospects={etat.prospects}
           majAppel={majAppel}
+          onEncoder={ouvreAppel}
           controles={etat.suivi.controlesRegistre}
           onControle={(date) =>
             majEtat((e) => ({

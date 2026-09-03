@@ -121,31 +121,35 @@ test("le classeur s'ouvre et se lit", async () => {
   assert.deepEqual(rows[0], COLONNES_RDV.map((c) => c.titre), "une ligne de titres complète");
   assert.equal(rows.length, 4, "trois rendez-vous sous les titres");
 
+  // les colonnes sont retrouvées par leur clé : ajouter une colonne au classeur
+  // ne doit pas obliger à renuméroter tout le test
+  const col = (cle) => COLONNES_RDV.findIndex((c) => c.cle === cle);
   const premier = rows[1];
-  assert.equal(premier[0], hier, "date d'annulation : une vraie date");
-  assert.equal(premier[1], "À annuler maintenant", "l'échéance dépassée est annoncée");
-  assert.equal(premier[2], "BOURDON, SANDY");
-  assert.equal(premier[3], "+32 69 64 14 60");
-  assert.equal(premier[4], "2027-01-15", "le rendez-vous réellement pris");
-  assert.equal(premier[5], "avec supplément");
-  assert.equal(premier[6], "45", "le prix est un nombre");
-  assert.equal(premier[7], "Péruwelz");
-  assert.equal(premier[9], "2026-09-01");
-  assert.equal(premier[10], "10:24");
-  assert.equal(premier[11], "secrétariat pressé");
+  assert.equal(premier[col("annulerLe")], hier, "date d'annulation : une vraie date");
+  assert.equal(premier[col("statut")], "À annuler maintenant", "l'échéance dépassée est annoncée");
+  assert.equal(premier[col("dentiste")], "BOURDON, SANDY");
+  assert.equal(premier[col("telephone")], "+32 69 64 14 60");
+  assert.equal(premier[col("rdvLe")], "2027-01-15", "le rendez-vous réellement pris");
+  assert.equal(premier[col("tarif")], "avec supplément");
+  assert.equal(premier[col("prix")], "45", "le prix est un nombre");
+  assert.equal(premier[col("commune")], "Péruwelz");
+  assert.equal(premier[col("appelLe")], "2026-09-01");
+  assert.equal(premier[col("heureAppel")], "10:24");
+  assert.equal(premier[col("remarques")], "secrétariat pressé");
 
-  assert.equal(rows[2][1], "À annuler", "échéance encore lointaine");
-  assert.equal(rows[3][1], "Annulé par le cabinet le 09/09/2026");
-  assert.match(rows[3][2], /dentiste Y/, "le dentiste Y reste identifiable");
+  assert.equal(rows[2][col("statut")], "À annuler", "échéance encore lointaine");
+  assert.equal(rows[3][col("statut")], "Annulé par le cabinet le 09/09/2026");
+  assert.match(rows[3][col("dentiste")], /dentiste Y/, "le dentiste Y reste identifiable");
 });
 
 test("le classeur suit la langue de l'application", async () => {
   const blob = await classeurRendezVous(jeuDAppels(), fiches, creeTraducteur("nl"));
   const octets = Buffer.from(await blob.arrayBuffer());
   const { sheets } = await readXlsx(octets.buffer.slice(octets.byteOffset, octets.byteOffset + octets.byteLength));
-  assert.equal(sheets[0].rows[0][0], "Te annuleren vanaf");
-  assert.equal(sheets[0].rows[1][1], "Nu te annuleren");
-  assert.equal(sheets[0].rows[1][5], "met supplement", "les valeurs sont traduites à l'affichage…");
+  const col = (cle) => COLONNES_RDV.findIndex((c) => c.cle === cle);
+  assert.equal(sheets[0].rows[0][col("annulerLe")], "Te annuleren vanaf");
+  assert.equal(sheets[0].rows[1][col("statut")], "Nu te annuleren");
+  assert.equal(sheets[0].rows[1][col("tarif")], "met supplement", "les valeurs sont traduites à l'affichage…");
 
   // …mais le fichier de Test-Achats, lui, n'a pas bougé
   const { ligneTexte } = await import("../src/lib/exporters.js");

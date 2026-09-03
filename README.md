@@ -161,9 +161,24 @@ dentiste X et surligné en jaune, comme demandé.
 
 ### 4. Suivre — onglet **Suivi**
 
+L'onglet suit l'ordre du travail : d'abord les rappels ordinaires, puis ceux du
+scénario, puis les annulations.
+
+- **Rappels — profil habituel** : les praticiens marqués « À rappeler » dans la
+  liste, ceux qui n'ont pas décroché ou qui ont demandé qu'on rappelle plus
+  tard. Rien ne change au scénario : c'est le même appel à refaire. Chaque fiche
+  donne la date du dernier essai, la commune, le numéro à composer et un bouton
+  qui rouvre directement le formulaire d'appel.
 - **Rappels profil « intervention majorée »** : les cabinets à rappeler le
-  lendemain, avec de quoi noter le second appel (date, rendez-vous obtenu).
-- **Rendez-vous à annuler** : la date d'annulation est calculée à **4 jours
+  lendemain, avec de quoi noter le second appel (date, rendez-vous obtenu). Si
+  un rendez-vous y est déjà placé, la fiche le rappelle.
+- **Rendez-vous à annuler** : **tous** les rendez-vous placés depuis le début de
+  la mission, à annuler comme déjà annulés (ces derniers grisés en fin de liste,
+  avec un lien pour rouvrir en cas de fausse manœuvre). Chaque fiche porte la
+  **date de l'appel**, la **date du rendez-vous** et le **numéro de téléphone**,
+  et ceux dont le cabinet est aussi à rappeler avec l'autre profil portent la
+  pastille « à rappeler — intervention majorée » : au moment d'annuler, on sait
+  qu'un second appel attend. La date d'annulation est calculée à **4 jours
   ouvrables** après l'appel, avec le compte à rebours et un bouton « le cabinet a
   annulé lui-même » (qui l'écrit dans les remarques). Un bouton
   **« Télécharger les rendez-vous (.xlsx) »** sort tous les rendez-vous placés
@@ -171,8 +186,9 @@ dentiste X et surligné en jaune, comme demandé.
   trié du plus urgent à annuler au plus lointain, ce qui est déjà annulé
   renvoyé en fin de liste et grisé, ce qui est à annuler aujourd'hui surligné,
   titres figés et filtres actifs, vraies dates et prix numérique. Colonnes :
-  date d'annulation, où en est l'annulation, dentiste, téléphone, rendez-vous
-  pris, tarif, prix, commune, province, date et heure de l'appel, remarques.
+  date d'annulation, où en est l'annulation, dentiste, téléphone, rappel
+  « intervention majorée », rendez-vous pris, tarif, prix, commune, province,
+  date et heure de l'appel, remarques.
   Le rendez-vous repris est bien **celui qu'on a pris** : si le premier était
   avec supplément et qu'un rendez-vous au tarif officiel était possible, c'est
   ce dernier qui compte, comme le veut le scénario B.
