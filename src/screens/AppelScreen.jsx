@@ -25,6 +25,8 @@ import { useT } from "../lib/i18n.js";
 // « à appeler » est l'état de départ, pas une suite à donner après un appel
 const SUITES = ETATS_PROSPECT.filter((e) => e.key !== "a_appeler");
 const LIBELLE_ETAT = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e.label]));
+// la suite choisie prend la couleur qu'elle aura dans la liste
+const TEINTE_ETAT = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e.tone]));
 
 function Identite({ call, set, fiche, ouvert, setOuvert }) {
   const t = useT();
@@ -441,6 +443,7 @@ export default function AppelScreen({
               value={call.etatFiche || "fait"}
               onChange={(cle) => set("etatFiche")(cle || "fait")}
               rendu={(cle) => t(LIBELLE_ETAT[cle])}
+              teintes={TEINTE_ETAT}
             />
             {!exportable && (
               <div className="rounded-lg bg-slate-100 px-3 py-2 text-[12.5px] text-slate-600">

@@ -223,7 +223,9 @@ export const ETATS_PROSPECT = [
   { key: "fait", label: "Fait", tone: "teal" },
   { key: "rappeler", label: "À rappeler", tone: "amber" },
   { key: "injoignable", label: "Injoignable", tone: "red" },
-  { key: "ignore", label: "Écarté", tone: "slate" },
+  // injoignable et écarté sont deux impasses : même rouge, pour les repérer
+  // d'un coup d'œil dans la liste
+  { key: "ignore", label: "Écarté", tone: "red" },
 ];
 
 /** Numéro de téléphone réduit à ses chiffres, pour repérer les doublons. */

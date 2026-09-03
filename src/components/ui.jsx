@@ -33,7 +33,7 @@ export function Label({ children, hint, htmlFor }) {
  * Groupe de réponses. `options` porte les valeurs enregistrées ; `rendu`
  * permet d'afficher autre chose que la valeur elle-même.
  */
-export function Choice({ label, hint, options, value, onChange, auto, rendu }) {
+export function Choice({ label, hint, options, value, onChange, auto, rendu, teintes }) {
   const t = useT();
   const libelle = rendu || ((o) => t.valeur(o));
   // les flèches déplacent la sélection dans le groupe : encodage au clavier
@@ -64,7 +64,7 @@ export function Choice({ label, hint, options, value, onChange, auto, rendu }) {
                 ANNEAU +
                 " " +
                 (on
-                  ? "border-teal-800 bg-teal-800 font-medium text-white"
+                  ? "font-medium " + (TEINTES[teintes?.[o]] || TEINTES.slate).filtreActif
                   : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 active:bg-slate-100")
               }
             >
@@ -231,14 +231,40 @@ export function Bouton({ children, onClick, variant = "primary", disabled, class
   );
 }
 
+/**
+ * Teintes des états d'une fiche. Une seule table pour la pastille, le menu du
+ * tableau et le filtre : un état ne peut plus être vert ici et orange là.
+ */
+export const TEINTES = {
+  slate: {
+    puce: "bg-slate-100 text-slate-600",
+    champ: "border-slate-300 bg-white text-slate-700",
+    filtre: "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+    filtreActif: "border-teal-800 bg-teal-800 text-white",
+  },
+  teal: {
+    puce: "bg-teal-100 text-teal-800",
+    champ: "border-teal-200 bg-teal-50 text-teal-800",
+    filtre: "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+    filtreActif: "border-teal-800 bg-teal-800 text-white",
+  },
+  amber: {
+    puce: "bg-amber-100 text-amber-800",
+    champ: "border-amber-200 bg-amber-50 text-amber-800",
+    filtre: "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400",
+    filtreActif: "border-amber-500 bg-amber-500 text-white",
+  },
+  red: {
+    puce: "bg-red-100 text-red-700",
+    champ: "border-red-200 bg-red-50 text-red-700",
+    filtre: "border-red-300 bg-red-50 text-red-700 hover:border-red-400",
+    filtreActif: "border-red-600 bg-red-600 text-white",
+  },
+};
+
 export function Puce({ children, tone = "slate" }) {
-  const tones = {
-    slate: "bg-slate-100 text-slate-600",
-    teal: "bg-teal-100 text-teal-800",
-    amber: "bg-amber-100 text-amber-800",
-    red: "bg-red-100 text-red-700",
-  };
-  return <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${tones[tone]}`}>{children}</span>;
+  const teinte = TEINTES[tone] || TEINTES.slate;
+  return <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${teinte.puce}`}>{children}</span>;
 }
 
 export function Case({ checked, onChange, children }) {

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Bouton, Puce, Vide, useRaccourciRecherche } from "../components/ui.jsx";
+import { Bouton, Puce, TEINTES, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { ETATS_PROSPECT, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
 import { useT } from "../lib/i18n.js";
@@ -217,11 +217,7 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
           onChange={(e) => onEtat(fiche.id, e.target.value)}
           className={
             "min-h-[30px] rounded-md border px-1.5 py-0.5 text-[12px] focus:border-teal-700 focus:outline-none " +
-            (fiche.etat === "fait"
-              ? "border-teal-200 bg-teal-50 text-teal-800"
-              : fiche.etat === "a_appeler"
-                ? "border-slate-300 bg-white text-slate-700"
-                : "border-amber-200 bg-amber-50 text-amber-800")
+            TEINTES[(ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler).tone].champ
           }
         >
           {ETATS_PROSPECT.map((e) => (
@@ -373,13 +369,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
               onClick={() => setFiltre(e.key)}
               className={
                 "min-h-[36px] shrink-0 rounded-lg border px-3 py-1.5 text-[12.5px] lg:min-h-[30px] lg:py-1 " +
-                (actif
-                  ? e.tone === "amber"
-                    ? "border-amber-500 bg-amber-500 text-white"
-                    : "border-teal-800 bg-teal-800 text-white"
-                  : e.tone === "amber"
-                    ? "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400"
-                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400")
+                (actif ? TEINTES[e.tone || "slate"].filtreActif : TEINTES[e.tone || "slate"].filtre)
               }
             >
               {t(e.label)} {n > 0 && <span className="opacity-70">{n}</span>}
