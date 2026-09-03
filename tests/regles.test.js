@@ -8,6 +8,7 @@ import {
   emptyCall,
   emptyProspect,
   estOriente,
+  ficheSelonAppel,
   fichesDeLaMission,
   ordreExport,
   phoneKey,
@@ -202,4 +203,42 @@ test("le dentiste Y partage le numéro du cabinet sans être un doublon", () => 
   const aSignaler = prospects.filter((f) => !estOriente(f) && phoneKey(f.telephone));
   assert.equal(aSignaler.length, 1, "seul le praticien du fichier entre dans la détection");
   assert.equal(phoneKey(prospects[0].telephone), phoneKey(prospects[1].telephone), "les numéros sont bien identiques");
+});
+
+/* ------------------------------------------ ce qu'un appel corrige sur la fiche */
+
+test("un numéro corrigé pendant l'appel remonte dans la liste", () => {
+  const fiche = emptyProspect({
+    id: "p1",
+    nom: "BOURDON, SANDI",
+    telephone: "+32 69 64 14 60",
+    province: "Hainaut",
+    statut: "conventionné",
+    commune: "Péruwelz",
+    etat: "a_appeler",
+  });
+  // au téléphone : le numéro du fichier était faux, et le nom mal orthographié
+  const appel = emptyCall({
+    prospectId: "p1",
+    dentiste: "BOURDON, SANDY",
+    telephone: "+32 69 77 12 34",
+    province: "Hainaut",
+    statut: "non conventionné",
+  });
+
+  const suivante = ficheSelonAppel(fiche, appel, "fait");
+  assert.equal(suivante.telephone, "+32 69 77 12 34", "c'est ce numéro-là qu'il faudra rappeler");
+  assert.equal(suivante.nom, "BOURDON, SANDY");
+  assert.equal(suivante.statut, "non conventionné");
+  assert.equal(suivante.etat, "fait");
+  assert.equal(suivante.commune, "Péruwelz", "ce que l'appel ne touche pas ne bouge pas");
+});
+
+test("un champ laissé vide dans l'appel n'efface pas ce que la fiche sait", () => {
+  const fiche = emptyProspect({ id: "p1", nom: "BOURDON, SANDY", telephone: "+32 69 64 14 60", province: "Hainaut", statut: "conventionné" });
+  const suivante = ficheSelonAppel(fiche, emptyCall({ prospectId: "p1", dentiste: "BOURDON, SANDY" }), "rappeler");
+  assert.equal(suivante.telephone, "+32 69 64 14 60");
+  assert.equal(suivante.province, "Hainaut");
+  assert.equal(suivante.statut, "conventionné");
+  assert.equal(suivante.etat, "rappeler", "seule la suite à donner change");
 });

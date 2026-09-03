@@ -208,6 +208,26 @@ export function emptyProspect(defaults = {}) {
   };
 }
 
+/**
+ * Reporte sur la fiche du praticien ce qui a été corrigé pendant l'appel :
+ * un numéro repris au téléphone, un nom mal orthographié dans le fichier, la
+ * province ou le statut. Sans cela la liste garderait l'ancienne valeur et on
+ * rappellerait le mauvais numéro.
+ *
+ * Un champ laissé vide dans l'appel n'efface pas ce que la fiche sait déjà.
+ */
+export function ficheSelonAppel(fiche, call, etat) {
+  const repris = (nouveau, ancien) => (String(nouveau ?? "").trim() ? nouveau : ancien);
+  return {
+    ...fiche,
+    nom: repris(call.dentiste, fiche.nom),
+    telephone: repris(call.telephone, fiche.telephone),
+    province: repris(call.province, fiche.province),
+    statut: repris(call.statut, fiche.statut),
+    etat,
+  };
+}
+
 /** Praticien ajouté depuis un appel, et non depuis le fichier de la mission. */
 export function estOriente(fiche) {
   return fiche?.origine === "oriente";

@@ -14,6 +14,7 @@ import {
   emptyCall,
   emptyProspect,
   estOriente,
+  ficheSelonAppel,
   fichesDeLaMission,
   phoneKey,
   rdvPris,
@@ -276,8 +277,10 @@ export default function App() {
         : garde
           ? [...e.calls, complet]
           : e.calls,
+      // la fiche suit l'appel : état, mais aussi numéro, nom, province et
+      // statut corrigés pendant la conversation
       prospects: inserePres(
-        e.prospects.map((p) => (p.id === complet.prospectId ? { ...p, etat: suite } : p)),
+        e.prospects.map((p) => (p.id === complet.prospectId ? ficheSelonAppel(p, complet, suite) : p)),
         nouvelleFiche
       ),
       reglages: { ...e.reglages, province: complet.province || e.reglages.province, statut: complet.statut || e.reglages.statut },

@@ -137,7 +137,34 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
 );
 
-console.log("\n7. Dentiste Y du scénario C");
+console.log("\n7. Un numéro corrigé pendant l'appel");
+// le fichier de la mission se trompe souvent d'un chiffre : on corrige sur la
+// fiche d'appel, et la liste doit suivre — sinon on rappelle le mauvais numéro
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(250);
+const aCorriger = A.troisiemeNom;
+await page.click(`tbody tr:has-text("${aCorriger}") button:has-text("Encoder")`);
+await page.waitForTimeout(300);
+await page.click("h2:has-text('Le dentiste') >> xpath=../.. >> button:has-text('Modifier')");
+await page.waitForTimeout(200);
+const NOUVEAU_TEL = "+32 69 77 12 34";
+await page.fill("h2:has-text('Le dentiste') >> xpath=../.. >> input[inputmode='tel']", NOUVEAU_TEL);
+await page.waitForTimeout(150);
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
+await page.waitForTimeout(200);
+await page.click('button:has-text("Enregistrer et passer")');
+await page.waitForTimeout(500);
+
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+const ligneCorrigee = await page.textContent(`tbody tr:has-text("${aCorriger}")`);
+verifie(
+  "le nouveau numéro apparaît dans la liste",
+  ligneCorrigee.includes(NOUVEAU_TEL),
+  ligneCorrigee.replace(/\s+/g, " ").slice(0, 110)
+);
+
+console.log("\n8. Dentiste Y du scénario C");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(250);
 await page.click(`tbody tr:has-text("${A.dernierNom}") button:has-text("Encoder")`);
@@ -189,17 +216,24 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n8. Journée en tableau");
+console.log("\n9. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
-verifie("aucune ligne vide créée pour l'injoignable", appelsEncodes === 3, `${appelsEncodes} ligne(s)`);
+// encodés jusqu'ici : le premier praticien, le numéro corrigé, le dentiste X
+// du scénario C et son dentiste Y — l'injoignable, lui, n'a rien laissé
+verifie("quatre appels encodés", appelsEncodes === 4, `${appelsEncodes} ligne(s)`);
+verifie(
+  "aucune ligne créée pour l'injoignable",
+  !(await page.textContent("table")).includes(nomSuivant),
+  nomSuivant
+);
 const ligneJournee = await page.textContent(`tbody tr:has-text("${A.premierNom}")`);
 verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), ligneJournee.replace(/\s+/g, " ").slice(0, 90));
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n9. Suivi et données sur deux colonnes");
+console.log("\n10. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -232,7 +266,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n10. Aide clavier");
+console.log("\n11. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -240,7 +274,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n11. Langue de l'interface");
+console.log("\n12. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -281,7 +315,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n12. Aucune erreur JavaScript");
+console.log("\n13. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();
