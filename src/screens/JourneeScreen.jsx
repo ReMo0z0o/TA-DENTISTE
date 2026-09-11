@@ -112,7 +112,7 @@ export default function JourneeScreen({ calls, onEditer, onSupprimer, onDentiste
       </div>
 
       {/* tableau : la journée se relit comme le fichier Excel */}
-      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white lg:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">

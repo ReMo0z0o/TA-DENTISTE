@@ -105,7 +105,20 @@ const carte = await page.textContent(`li:has-text("${A.premierNom}"):visible`);
 verifie("heure visible dans l'historique", new RegExp(heure).test(carte), carte.slice(0, 120));
 verifie("résumé du rendez-vous", carte.includes("12/11/2026"), carte.slice(0, 160));
 
-console.log("\n5. Remplissage du fichier Excel officiel");
+console.log("\n5. Copier la ligne Excel d'un seul dentiste");
+await page.click('[data-role="onglets-mobile"] >> text=Liste');
+await page.waitForSelector(`li:has-text("${A.premierNom}"):visible`);
+await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+// le bouton vit dans le panneau « ⋯ » de la carte
+await page.click(`li:has-text("${A.premierNom}"):visible >> button[aria-label="Plus d'options"]`);
+await page.waitForTimeout(250);
+await page.click(`li:has-text("${A.premierNom}"):visible >> button:has-text("Copier la ligne Excel")`);
+await page.waitForTimeout(400);
+const ligneMobile = await page.evaluate(() => navigator.clipboard.readText());
+verifie("une seule ligne de 23 colonnes", ligneMobile.split("\t").length === 23 && !ligneMobile.includes("\n"), `${ligneMobile.split("\t").length} colonnes`);
+verifie("c'est bien ce dentiste-là", ligneMobile.split("\t")[1] === A.premierNom, ligneMobile.split("\t")[1]);
+
+console.log("\n6. Remplissage du fichier Excel officiel");
 await page.click('[data-role="onglets-mobile"] >> text=Données');
 await page.waitForSelector("text=Remplir le fichier Excel de Test-Achats");
 await page.setInputFiles('input[accept=".xlsx,.xlsm"]', jeu.modele);
@@ -127,7 +140,7 @@ const zipRempli = readZip(octets.buffer.slice(octets.byteOffset, octets.byteOffs
 const feuille = await entryText(zipRempli.get("xl/worksheets/sheet1.xml"));
 verifie("listes déroulantes conservées", /<dataValidations/.test(feuille) && /conventionné,partiellement/.test(feuille));
 
-console.log("\n6. Sauvegarde .json et reprise sur un autre appareil");
+console.log("\n7. Sauvegarde .json et reprise sur un autre appareil");
 const dlJson = page.waitForEvent("download");
 await page.click('button:has-text("Télécharger le fichier .json")');
 const fichierJson = path.join(SORTIES, "sauvegarde.json");
@@ -151,7 +164,7 @@ await page2.waitForTimeout(600);
 const entete = await page2.textContent("header");
 verifie("reprise sur un autre appareil", entete.includes("1 appel"), entete.replace(/\s+/g, " ").slice(0, 80));
 
-console.log("\n7. Aucune erreur JavaScript");
+console.log("\n8. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await page2.click('[data-role="onglets-bureau"] >> text=Liste');

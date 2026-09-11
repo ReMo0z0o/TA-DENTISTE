@@ -252,3 +252,17 @@ test("un praticien dont le fichier donne le statut garde le sien", () => {
   assert.equal(fiches[0].statut, "partiellement conventionné", "le fichier fait foi");
   assert.equal(fiches[1].statut, "non conventionné", "le choix comble les cases vides");
 });
+
+test("la ligne copiée pour un seul dentiste est celle du collage groupé", async () => {
+  const { ligneTexte, tsv } = await import("../src/lib/exporters.js");
+  const { emptyCall } = await import("../src/lib/model.js");
+  const appels = [
+    emptyCall({ id: "a", dentiste: "BOURDON, SANDY", province: "Hainaut", telephone: "+32 69 64 14 60", dateAppel: "2026-09-01", rdvPossible: "oui", datePremierRdv: "2026-11-12", remarques: "secrétariat pressé" }),
+    emptyCall({ id: "b", dentiste: "MARTIN, ALEX", province: "Hainaut", dateAppel: "2026-09-02", rdvPossible: "non", raison: "retraite" }),
+  ];
+  const groupe = tsv(appels).split("\n");
+  assert.equal(ligneTexte(appels[0]).join("\t"), groupe[0], "copier une ligne ne doit rien changer à son contenu");
+  assert.equal(ligneTexte(appels[1]).join("\t"), groupe[1]);
+  assert.equal(ligneTexte(appels[0]).length, 23, "les 23 colonnes du fichier de réponses");
+  assert.ok(!ligneTexte(appels[0]).join("\t").includes("\n"), "une seule ligne, collable telle quelle");
+});

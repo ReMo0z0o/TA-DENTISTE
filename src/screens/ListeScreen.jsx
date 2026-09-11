@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, TEINTES, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { ETATS_PROSPECT, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
+import { ligneTexte } from "../lib/exporters.js";
 import { useT } from "../lib/i18n.js";
 
 const ETAT_PAR_CLE = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e]));
@@ -43,9 +44,23 @@ function Telephone({ numero, flash }) {
   );
 }
 
+/**
+ * Copie la ligne du fichier de réponses pour un seul appel : les 23 colonnes
+ * séparées par des tabulations, comme le collage groupé. Coller dans la
+ * première cellule d'une ligne vide suffit, Excel répartit les colonnes.
+ */
+async function copieLigne(appel, t, flash) {
+  try {
+    await navigator.clipboard.writeText(ligneTexte(appel).join("\t"));
+    flash?.(t("Ligne de {nom} copiée. Colle-la dans la colonne A d'une ligne vide.", { nom: appel.dentiste }));
+  } catch {
+    flash?.(t("Copie refusée par le navigateur."));
+  }
+}
+
 /* ------------------------------------------------------ carte (mobile) */
 
-function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
+function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash }) {
   const t = useT();
   const [ouvert, setOuvert] = useState(false);
   const etat = ETAT_PAR_CLE[fiche.etat] || ETAT_PAR_CLE.a_appeler;
@@ -148,6 +163,11 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer }) {
               </button>
             ))}
           </div>
+          {appel && (
+            <Bouton variant="ghost" onClick={() => copieLigne(appel, t, flash)} className="mb-3 w-full">
+              {t("Copier la ligne Excel")}
+            </Bouton>
+          )}
           <button onClick={() => onSupprimer(fiche.id)} className="text-[12.5px] text-red-700 underline underline-offset-2">
             {t("Retirer de la liste")}
           </button>
@@ -237,6 +257,18 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
         >
           {appel ? t("Revoir") : t("Encoder")}
         </button>
+        {appel && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              copieLigne(appel, t, flash);
+            }}
+            title={t("Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel")}
+            className="ml-1 rounded-md border border-slate-300 px-2 py-1 text-[12px] text-slate-700 hover:border-teal-700 hover:text-teal-800"
+          >
+            {t("Ligne Excel")}
+          </button>
+        )}
         <button
           onClick={() => onSupprimer(fiche.id)}
           title={t("Retirer de la liste")}
@@ -309,7 +341,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
     );
   }
 
-  const commun = { onEncoder, onEtat, onSupprimer };
+  const commun = { onEncoder, onEtat, onSupprimer, flash };
 
   return (
     <div className="pb-24 lg:pb-0">
@@ -379,7 +411,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       </div>
 
       {/* tableau : lecture en un coup d'œil sur grand écran */}
-      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white lg:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white lg:block">
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">
@@ -400,7 +432,6 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
                 fiche={fiche}
                 appel={appelParFiche.get(fiche.id)}
                 doublon={doublons.get(fiche.id)}
-                flash={flash}
                 {...commun}
               />
             ))}

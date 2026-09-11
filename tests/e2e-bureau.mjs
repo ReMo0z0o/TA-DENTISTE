@@ -254,7 +254,29 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n9. Journée en tableau");
+console.log("\n9. Copier la ligne Excel d'un seul dentiste");
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+// l'injoignable n'a laissé aucun appel : rien à copier, donc pas de bouton
+verifie(
+  "pas de bouton pour un praticien sans appel encodé",
+  (await page.locator(`tbody tr:has-text("${nomSuivant}") button:has-text("Ligne Excel")`).count()) === 0,
+  nomSuivant
+);
+await page.click(`tbody tr:has-text("${A.premierNom}") button:has-text("Ligne Excel")`);
+await page.waitForTimeout(400);
+const ligneCopiee = await page.evaluate(() => navigator.clipboard.readText());
+const cellules = ligneCopiee.split("\t");
+verifie("une seule ligne est copiée", !ligneCopiee.includes("\n"), JSON.stringify(ligneCopiee.slice(0, 60)));
+verifie("les 23 colonnes y sont", cellules.length === 23, `${cellules.length} colonnes`);
+verifie("c'est bien ce dentiste-là", cellules[1] === A.premierNom, cellules[1]);
+verifie("la province ouvre la ligne", cellules[0] === A.province, cellules[0]);
+verifie("le téléphone est repris", cellules[4] === A.premierTel, cellules[4]);
+verifie("les dates sont au format du fichier", /^\d{2}\/\d{2}\/\d{4}$/.test(cellules[3]), cellules[3]);
+verifie("l'application confirme ce qui a été copié", await page.isVisible(`text=Ligne de ${A.premierNom} copiée`));
+
+console.log("\n10. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
@@ -271,7 +293,7 @@ verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), li
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n10. Suivi et données sur deux colonnes");
+console.log("\n11. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -353,7 +375,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n11. Aide clavier");
+console.log("\n12. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -361,7 +383,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n12. Langue de l'interface");
+console.log("\n13. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -402,7 +424,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n13. Aucune erreur JavaScript");
+console.log("\n14. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

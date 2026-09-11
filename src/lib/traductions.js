@@ -114,6 +114,12 @@ const NL = {
   copier: "kopiëren",
   Copier: "Kopiëren",
   "Copier le numéro": "Nummer kopiëren",
+  "Ligne Excel": "Excel-rij",
+  "Copier la ligne Excel": "De Excel-rij kopiëren",
+  "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
+    "De 23 kolommen van die oproep kopiëren om ze in het Excel-bestand te plakken",
+  "Ligne de {nom} copiée. Colle-la dans la colonne A d'une ligne vide.":
+    "Rij van {nom} gekopieerd. Plak ze in kolom A van een lege rij.",
   "Numéro copié : {numero}": "Nummer gekopieerd: {numero}",
   "Copie refusée par le navigateur.": "De browser weigerde het kopiëren.",
 
@@ -547,6 +553,12 @@ const EN = {
   copier: "copy",
   Copier: "Copy",
   "Copier le numéro": "Copy the number",
+  "Ligne Excel": "Excel row",
+  "Copier la ligne Excel": "Copy the Excel row",
+  "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
+    "Copy the 23 columns of this call, to paste them into the Excel file",
+  "Ligne de {nom} copiée. Colle-la dans la colonne A d'une ligne vide.":
+    "{nom}'s row copied. Paste it into column A of an empty row.",
   "Numéro copié : {numero}": "Number copied: {numero}",
   "Copie refusée par le navigateur.": "The browser refused to copy.",
 
