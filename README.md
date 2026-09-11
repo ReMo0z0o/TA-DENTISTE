@@ -110,10 +110,10 @@ exemple), un `.csv`, ou coller des lignes copiées depuis Excel. L'application :
 
 Chaque praticien montre son nom, sa commune, son statut et son numéro — en
 tableau au bureau, en cartes sur téléphone, avec un bouton qui compose le numéro.
-Sur une fiche déjà encodée, **« Ligne Excel »** copie les 23 colonnes de ce seul
-appel : de quoi compléter le fichier de réponses un dentiste à la fois, sans
-recoller tout le tableau. Sur téléphone, le bouton est dans le menu « ⋯ » de la
-carte.
+Sur une fiche déjà encodée, un **bouton copier** (deux feuillets, au bout de la
+ligne) reprend les 23 colonnes de ce seul appel : de quoi compléter le fichier
+de réponses un dentiste à la fois, sans recoller tout le tableau. Sur téléphone,
+il est dans le menu « ⋯ » de la carte, avec son libellé.
 
 « Encoder » ouvre le formulaire avec province, dentiste, téléphone, statut, date
 **et heure** déjà remplis. Un bandeau rouge prévient si un numéro

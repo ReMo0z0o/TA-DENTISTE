@@ -261,10 +261,10 @@ await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 // l'injoignable n'a laissé aucun appel : rien à copier, donc pas de bouton
 verifie(
   "pas de bouton pour un praticien sans appel encodé",
-  (await page.locator(`tbody tr:has-text("${nomSuivant}") button:has-text("Ligne Excel")`).count()) === 0,
+  (await page.locator(`tbody tr:has-text("${nomSuivant}") button[data-role="copier-ligne"]`).count()) === 0,
   nomSuivant
 );
-await page.click(`tbody tr:has-text("${A.premierNom}") button:has-text("Ligne Excel")`);
+await page.click(`tbody tr:has-text("${A.premierNom}") button[data-role="copier-ligne"]`);
 await page.waitForTimeout(400);
 const ligneCopiee = await page.evaluate(() => navigator.clipboard.readText());
 const cellules = ligneCopiee.split("\t");

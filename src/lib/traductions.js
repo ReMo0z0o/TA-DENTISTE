@@ -114,7 +114,6 @@ const NL = {
   copier: "kopiëren",
   Copier: "Kopiëren",
   "Copier le numéro": "Nummer kopiëren",
-  "Ligne Excel": "Excel-rij",
   "Copier la ligne Excel": "De Excel-rij kopiëren",
   "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
     "De 23 kolommen van die oproep kopiëren om ze in het Excel-bestand te plakken",
@@ -553,7 +552,6 @@ const EN = {
   copier: "copy",
   Copier: "Copy",
   "Copier le numéro": "Copy the number",
-  "Ligne Excel": "Excel row",
   "Copier la ligne Excel": "Copy the Excel row",
   "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
     "Copy the 23 columns of this call, to paste them into the Excel file",
