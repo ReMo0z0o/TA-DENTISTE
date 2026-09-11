@@ -266,3 +266,49 @@ test("la ligne copiée pour un seul dentiste est celle du collage groupé", asyn
   assert.equal(ligneTexte(appels[0]).length, 23, "les 23 colonnes du fichier de réponses");
   assert.ok(!ligneTexte(appels[0]).join("\t").includes("\n"), "une seule ligne, collable telle quelle");
 });
+
+/* ------------------------ copier une sélection de praticiens, appelés ou non */
+
+const FICHES = [
+  { id: "p1", nom: "BOURDON, SANDY", telephone: "+32 69 64 14 60", province: "Hainaut", statut: "conventionné", etat: "fait" },
+  { id: "p2", nom: "MARTIN, ALEX", telephone: "+32 71 11 22 33", province: "Hainaut", statut: "conventionné", etat: "a_appeler" },
+  { id: "p3", nom: "DUBOIS, LEA", telephone: "+32 65 44 55 66", province: "Hainaut", statut: "non conventionné", etat: "rappeler" },
+];
+
+test("un praticien pas encore appelé donne quand même sa ligne", async () => {
+  const { ligneFiche } = await import("../src/lib/exporters.js");
+  const ligne = ligneFiche(FICHES[1]);
+  assert.equal(ligne.length, 23, "les 23 colonnes du fichier de réponses");
+  assert.deepEqual(ligne.slice(0, 5), ["Hainaut", "MARTIN, ALEX", "conventionné", "", "+32 71 11 22 33"]);
+  assert.deepEqual(ligne.slice(5), Array(18).fill(""), "tout le reste est à compléter dans Excel");
+});
+
+test("la sélection mélange appels encodés et fiches nues, dans l'ordre affiché", async () => {
+  const { tsvDesFiches, ligneTexte } = await import("../src/lib/exporters.js");
+  const { emptyCall } = await import("../src/lib/model.js");
+  const appel = emptyCall({
+    id: "c1", prospectId: "p1", province: "Hainaut", dentiste: "BOURDON, SANDY",
+    statut: "conventionné", telephone: "+32 69 64 14 60", dateAppel: "2026-09-01",
+    rdvPossible: "oui", datePremierRdv: "2026-11-12",
+  });
+  const lignes = tsvDesFiches(FICHES, [appel]).split("\n");
+
+  assert.equal(lignes.length, 3, "une ligne par praticien affiché");
+  assert.equal(lignes[0], ligneTexte(appel).join("\t"), "l'appel encodé est repris tel quel");
+  assert.equal(lignes[1].split("\t")[1], "MARTIN, ALEX");
+  assert.equal(lignes[1].split("\t")[3], "", "aucune date inventée pour un praticien pas appelé");
+  assert.equal(lignes[2].split("\t")[2], "non conventionné", "chaque fiche garde son statut");
+  assert.ok(lignes.every((l) => l.split("\t").length === 23));
+});
+
+test("copier une sélection vide ne produit rien", async () => {
+  const { tsvDesFiches } = await import("../src/lib/exporters.js");
+  assert.equal(tsvDesFiches([], []), "");
+});
+
+test("la ligne d'une sélection d'un seul praticien est celle du bouton de sa ligne", async () => {
+  const { tsvDesFiches, ligneTexte } = await import("../src/lib/exporters.js");
+  const { emptyCall } = await import("../src/lib/model.js");
+  const appel = emptyCall({ id: "c1", prospectId: "p1", dentiste: "BOURDON, SANDY", province: "Hainaut", dateAppel: "2026-09-01" });
+  assert.equal(tsvDesFiches([FICHES[0]], [appel]), ligneTexte(appel).join("\t"));
+});

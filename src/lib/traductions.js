@@ -115,6 +115,16 @@ const NL = {
   Copier: "Kopiëren",
   "Copier le numéro": "Nummer kopiëren",
   "Copier la ligne Excel": "De Excel-rij kopiëren",
+  "Copier la ligne affichée": "De getoonde rij kopiëren",
+  "Copier les {n} lignes affichées": "De {n} getoonde rijen kopiëren",
+  "Copier les 23 colonnes de chaque praticien affiché, pour les coller dans le fichier Excel":
+    "De 23 kolommen van elke getoonde beoefenaar kopiëren om ze in het Excel-bestand te plakken",
+  "Les praticiens pas encore appelés donnent une ligne avec la province, le nom, le statut et le téléphone — le reste se complète dans Excel.":
+    "Beoefenaars die nog niet gebeld zijn, geven een rij met provincie, naam, statuut en telefoon — de rest vul je in Excel aan.",
+  "{n} ligne copiée. Colle-la dans la colonne A d'une ligne vide.":
+    "{n} rij gekopieerd. Plak ze in kolom A van een lege rij.",
+  "{n} lignes copiées. Colle-les dans la colonne A d'une ligne vide.":
+    "{n} rijen gekopieerd. Plak ze in kolom A van een lege rij.",
   "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
     "De 23 kolommen van die oproep kopiëren om ze in het Excel-bestand te plakken",
   "Ligne de {nom} copiée. Colle-la dans la colonne A d'une ligne vide.":
@@ -553,6 +563,16 @@ const EN = {
   Copier: "Copy",
   "Copier le numéro": "Copy the number",
   "Copier la ligne Excel": "Copy the Excel row",
+  "Copier la ligne affichée": "Copy the row shown",
+  "Copier les {n} lignes affichées": "Copy the {n} rows shown",
+  "Copier les 23 colonnes de chaque praticien affiché, pour les coller dans le fichier Excel":
+    "Copy the 23 columns of every practitioner shown, to paste them into the Excel file",
+  "Les praticiens pas encore appelés donnent une ligne avec la province, le nom, le statut et le téléphone — le reste se complète dans Excel.":
+    "Practitioners not called yet give a row with province, name, status and phone — the rest you fill in inside Excel.",
+  "{n} ligne copiée. Colle-la dans la colonne A d'une ligne vide.":
+    "{n} row copied. Paste it into column A of an empty row.",
+  "{n} lignes copiées. Colle-les dans la colonne A d'une ligne vide.":
+    "{n} rows copied. Paste them into column A of an empty row.",
   "Copier les 23 colonnes de cet appel, pour les coller dans le fichier Excel":
     "Copy the 23 columns of this call, to paste them into the Excel file",
   "Ligne de {nom} copiée. Colle-la dans la colonne A d'une ligne vide.":

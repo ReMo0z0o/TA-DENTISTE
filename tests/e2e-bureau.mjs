@@ -254,7 +254,7 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n9. Copier la ligne Excel d'un seul dentiste");
+console.log("\n9. Copier des lignes Excel depuis la liste");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(300);
 await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -275,6 +275,63 @@ verifie("la province ouvre la ligne", cellules[0] === A.province, cellules[0]);
 verifie("le téléphone est repris", cellules[4] === A.premierTel, cellules[4]);
 verifie("les dates sont au format du fichier", /^\d{2}\/\d{2}\/\d{4}$/.test(cellules[3]), cellules[3]);
 verifie("l'application confirme ce qui a été copié", await page.isVisible(`text=Ligne de ${A.premierNom} copiée`));
+
+// copier toute la sélection : ce que le filtre laisse voir, encodé ou non
+const boutonSelection = 'button[data-role="copier-selection"]';
+await page.click("button:text-is('Tous') >> nth=0");
+await page.waitForTimeout(250);
+await page.click(boutonSelection);
+await page.waitForTimeout(400);
+const tout = (await page.evaluate(() => navigator.clipboard.readText())).split("\n");
+verifie(
+  "« Tous » copie toute la liste, dentistes Y compris",
+  tout.length === A.praticiens + 1,
+  `${tout.length} lignes pour ${A.praticiens} praticiens + 1 dentiste Y`
+);
+verifie("chaque ligne a ses 23 colonnes", tout.every((l) => l.split("\t").length === 23));
+// une ligne sans date d'appel = un praticien pas encore appelé : il doit tout
+// de même porter son identité, prêt à être complété dans Excel
+const nonAppelees = tout.map((l) => l.split("\t")).filter((c) => c[3] === "");
+verifie(
+  "les praticiens pas encore appelés sont du lot",
+  nonAppelees.length > 0 && nonAppelees.length === tout.length - 4,
+  `${nonAppelees.length} non appelés sur ${tout.length}`
+);
+const nue = nonAppelees[0];
+verifie(
+  "une fiche nue garde province, nom, statut et téléphone",
+  nue[0] === A.province && nue[1].length > 0 && nue[2].length > 0 && /\d/.test(nue[4]),
+  JSON.stringify(nue.slice(0, 5))
+);
+verifie("et rien d'inventé au-delà", nue.slice(5).every((v) => v === ""), JSON.stringify(nue.slice(5, 10)));
+
+await page.click("button:has-text('Injoignable') >> nth=0");
+await page.waitForTimeout(300);
+await page.click(boutonSelection);
+await page.waitForTimeout(400);
+const injoignables = (await page.evaluate(() => navigator.clipboard.readText())).split("\n");
+verifie(
+  "« Injoignable » ne copie que les injoignables",
+  injoignables.length === 1 && injoignables[0].split("\t")[1] === nomSuivant,
+  `${injoignables.length} ligne(s) : ${injoignables[0]?.split("\t")[1]}`
+);
+
+// la recherche restreint aussi ce qui est copié
+await page.click("button:text-is('Tous') >> nth=0");
+await page.waitForTimeout(200);
+await page.fill("input[placeholder^='Chercher']", A.premierNom.split(",")[0]);
+await page.waitForTimeout(300);
+const annonce = await page.textContent(boutonSelection);
+await page.click(boutonSelection);
+await page.waitForTimeout(400);
+const cherche = (await page.evaluate(() => navigator.clipboard.readText())).split("\n");
+verifie(
+  "la recherche restreint aussi la copie",
+  cherche.length >= 1 && cherche.every((l) => l.split("\t")[1].includes(A.premierNom.split(",")[0])),
+  `${cherche.length} ligne(s) · bouton : ${annonce.trim()}`
+);
+await page.fill("input[placeholder^='Chercher']", "");
+await page.waitForTimeout(200);
 
 console.log("\n10. Journée en tableau");
 await page.keyboard.press("Alt+3");

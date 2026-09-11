@@ -1,6 +1,6 @@
 // Sorties : collage Excel, .csv, classeur .xlsx neuf, remplissage du fichier
 // officiel Antwoordtabel, et sauvegarde .json pour changer d'appareil.
-import { COLUMNS, DATE_FIELDS, HEADERS, besoinRappel, ordreExport, rdvPris } from "./model.js";
+import { COLUMNS, DATE_FIELDS, HEADERS, besoinRappel, emptyCall, ordreExport, rdvPris } from "./model.js";
 import { frDate, stamp, today } from "./dates.js";
 import { buildXlsx, fillTemplate, templateFirstFreeRow } from "./xlsx.js";
 
@@ -37,6 +37,37 @@ export function ligneExcel(call) {
     }
     return String(v);
   });
+}
+
+/**
+ * La ligne du fichier de réponses pour un praticien qu'on n'a pas encore
+ * appelé : les colonnes d'identité que la liste connaît déjà, le reste vide.
+ * Coller une liste entière et la compléter dans Excel reste possible.
+ */
+export function ligneFiche(fiche) {
+  return ligneTexte(
+    emptyCall({
+      province: fiche.province || "",
+      dentiste: fiche.nom || "",
+      statut: fiche.statut || "",
+      telephone: fiche.telephone || "",
+    })
+  );
+}
+
+/**
+ * Les lignes d'une sélection de praticiens, dans l'ordre où on les voit :
+ * l'appel encodé quand il existe, sinon la fiche seule.
+ */
+export function tsvDesFiches(fiches, calls = []) {
+  const parFiche = new Map();
+  for (const c of calls) if (c.prospectId) parFiche.set(c.prospectId, c);
+  return fiches
+    .map((fiche) => {
+      const appel = parFiche.get(fiche.id);
+      return (appel ? ligneTexte(appel) : ligneFiche(fiche)).join("\t");
+    })
+    .join("\n");
 }
 
 const csvCell = (v) => {

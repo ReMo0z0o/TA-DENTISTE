@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, TEINTES, Vide, useRaccourciRecherche } from "../components/ui.jsx";
 import { ETATS_PROSPECT, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
-import { ligneTexte } from "../lib/exporters.js";
+import { ligneTexte, tsvDesFiches } from "../lib/exporters.js";
 import { useT } from "../lib/i18n.js";
 
 const ETAT_PAR_CLE = Object.fromEntries(ETATS_PROSPECT.map((e) => [e.key, e]));
@@ -348,6 +348,23 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
     });
   }, [prospects, filtre, recherche]);
 
+  /** Copie ce que le filtre laisse voir, appels encodés ou simples fiches. */
+  const copieSelection = async () => {
+    if (!filtres.length) return;
+    try {
+      await navigator.clipboard.writeText(tsvDesFiches(filtres, calls));
+      flash?.(
+        t.n(
+          filtres.length,
+          "{n} ligne copiée. Colle-la dans la colonne A d'une ligne vide.",
+          "{n} lignes copiées. Colle-les dans la colonne A d'une ligne vide."
+        )
+      );
+    } catch {
+      flash?.(t("Copie refusée par le navigateur."));
+    }
+  };
+
   // le quota porte sur le fichier de la mission, pas sur les dentistes Y ajoutés
   const mission = fichesDeLaMission(prospects);
   const orientes = prospects.filter(estOriente);
@@ -435,6 +452,23 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
             </button>
           );
         })}
+      </div>
+
+      {/* copier ce qui est affiché : la sélection du filtre, recherche comprise */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[12px] text-slate-500">
+          {t("Les praticiens pas encore appelés donnent une ligne avec la province, le nom, le statut et le téléphone — le reste se complète dans Excel.")}
+        </p>
+        <button
+          onClick={copieSelection}
+          disabled={!filtres.length}
+          data-role="copier-selection"
+          title={t("Copier les 23 colonnes de chaque praticien affiché, pour les coller dans le fichier Excel")}
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12.5px] text-slate-700 hover:border-teal-700 hover:text-teal-800 disabled:text-slate-400"
+        >
+          <IconeCopier />
+          {t.n(filtres.length, "Copier la ligne affichée", "Copier les {n} lignes affichées")}
+        </button>
       </div>
 
       {/* tableau : lecture en un coup d'œil sur grand écran */}

@@ -110,10 +110,18 @@ exemple), un `.csv`, ou coller des lignes copiées depuis Excel. L'application :
 
 Chaque praticien montre son nom, sa commune, son statut et son numéro — en
 tableau au bureau, en cartes sur téléphone, avec un bouton qui compose le numéro.
-Sur une fiche déjà encodée, un **bouton copier** (deux feuillets, au bout de la
-ligne) reprend les 23 colonnes de ce seul appel : de quoi compléter le fichier
-de réponses un dentiste à la fois, sans recoller tout le tableau. Sur téléphone,
-il est dans le menu « ⋯ » de la carte, avec son libellé.
+Deux façons de récupérer des lignes du fichier de réponses sans quitter la
+liste :
+
+- sur une fiche déjà encodée, un **bouton copier** (deux feuillets, au bout de
+  la ligne) reprend les 23 colonnes de ce seul appel. Sur téléphone, il est dans
+  le menu « ⋯ » de la carte, avec son libellé ;
+- sous les filtres, **« Copier les N lignes affichées »** reprend toute la
+  sélection en cours — « Tous », « À appeler », « Fait », « Injoignable »,
+  « dentiste Y »… — recherche comprise. Les praticiens qu'on n'a pas encore
+  appelés y figurent aussi : leur ligne porte la province, le nom, le statut et
+  le téléphone, le reste étant à compléter dans Excel. Aucune date n'est
+  inventée pour un appel qui n'a pas eu lieu.
 
 « Encoder » ouvre le formulaire avec province, dentiste, téléphone, statut, date
 **et heure** déjà remplis. Un bandeau rouge prévient si un numéro
