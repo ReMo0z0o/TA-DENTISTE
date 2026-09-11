@@ -209,3 +209,46 @@ test("une liste aux intitulés anglais est reconnue", () => {
   assert.equal(fiches[0].nom, "SMITH, JOHN");
   assert.equal(fiches[0].province, "Anvers");
 });
+
+/* ----------------------------- statut Inami choisi au chargement de la liste */
+
+const LISTE_VIERGE = [
+  "N°;Nom du Praticien;N° INAMI;Adresse;Commune;Code postal;Téléphone",
+  "1;BOURDON, SANDY;303016-12;Rue du Colombier 28;Péruwelz;7608;+32 69 64 14 60",
+  "2;MARTIN, ALEX;314336-41;Place des Alliés 4;Mons;7000;+32 65 34 85 97",
+].join("\n");
+
+test("les trois statuts peuvent être appliqués à une liste vierge", () => {
+  const rows = parseDelimited(LISTE_VIERGE);
+  const { enTete, mapping } = mappingListe(rows);
+  for (const statut of ["conventionné", "partiellement conventionné", "non conventionné"]) {
+    const fiches = prospectsDepuis(rows, mapping, enTete, { statut });
+    assert.equal(fiches.length, 2);
+    assert.deepEqual(
+      fiches.map((f) => f.statut),
+      [statut, statut],
+      `le statut « ${statut} » doit couvrir toute la liste`
+    );
+  }
+});
+
+test("sans choix, le statut reste vide plutôt qu'inventé", () => {
+  const rows = parseDelimited(LISTE_VIERGE);
+  const { enTete, mapping } = mappingListe(rows);
+  const fiches = prospectsDepuis(rows, mapping, enTete, {});
+  assert.deepEqual(fiches.map((f) => f.statut), ["", ""]);
+});
+
+test("un praticien dont le fichier donne le statut garde le sien", () => {
+  // le choix fait au chargement ne doit pas écraser ce que le fichier sait
+  const colle = [
+    "N°;Nom du Praticien;Statut;Téléphone",
+    "1;BOURDON, SANDY;partiellement conventionné;+32 69 64 14 60",
+    "2;MARTIN, ALEX;;+32 65 34 85 97",
+  ].join("\n");
+  const rows = parseDelimited(colle);
+  const { enTete, mapping } = mappingListe(rows);
+  const fiches = prospectsDepuis(rows, mapping, enTete, { statut: "non conventionné" });
+  assert.equal(fiches[0].statut, "partiellement conventionné", "le fichier fait foi");
+  assert.equal(fiches[1].statut, "non conventionné", "le choix comble les cases vides");
+});

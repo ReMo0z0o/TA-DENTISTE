@@ -1,7 +1,7 @@
 // Chargement d'une liste d'appel : fichier .xlsx / .csv ou simple collage.
 // Les colonnes sont reconnues toutes seules, et restent corrigeables à la main.
 import { useMemo, useState } from "react";
-import { Block, Bouton, Label, Puce, Select, Tiroir, ZoneFichier } from "./ui.jsx";
+import { Block, Bouton, Choice, Label, Puce, Select, Tiroir, ZoneFichier } from "./ui.jsx";
 import {
   CHAMPS_LISTE,
   callsDepuisReponses,
@@ -177,23 +177,27 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
 
           {genre === "liste" && (
             <>
-              <div className="mb-3 grid gap-x-3 sm:grid-cols-2">
-                <Select
-                  label={t("Province si absente du fichier")}
-                  value={contexte.province}
-                  onChange={(v) => setContexte((c) => ({ ...c, province: v }))}
-                  options={[{ value: "", label: t("— aucune —") }, ...PROVINCES.map((p) => ({ value: p, label: p }))]}
-                />
-                <Select
-                  label={t("Statut Inami de cette liste")}
-                  value={contexte.statut}
-                  onChange={(v) => setContexte((c) => ({ ...c, statut: v }))}
-                  options={[
-                    { value: "", label: t("— aucun —") },
-                    ...STATUTS.map((s) => ({ value: s, label: t.valeur(s) })),
-                  ]}
-                />
-              </div>
+              <Select
+                label={t("Province si absente du fichier")}
+                value={contexte.province}
+                onChange={(v) => setContexte((c) => ({ ...c, province: v }))}
+                options={[{ value: "", label: t("— aucune —") }, ...PROVINCES.map((p) => ({ value: p, label: p }))]}
+              />
+
+              {/* colonne obligatoire du fichier de réponses : la choisir une
+                  fois ici évite de la reprendre sur chacun des 25 appels */}
+              <Choice
+                label={t("Statut Inami de cette liste")}
+                hint={t("Appliqué à tous les praticiens de cette liste, et déjà rempli à chaque appel. Les praticiens dont le fichier précise le statut gardent le leur.")}
+                options={STATUTS}
+                value={contexte.statut}
+                onChange={(v) => setContexte((c) => ({ ...c, statut: v }))}
+              />
+              {!contexte.statut && (
+                <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
+                  {t("Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.")}
+                </p>
+              )}
 
               <Label hint={t("Corrige si une colonne n'a pas été reconnue.")}>{t("Correspondance des colonnes")}</Label>
               <div className="-mx-3 mb-3 overflow-x-auto px-3">

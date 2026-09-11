@@ -63,8 +63,40 @@ console.log("\n2. Import par la zone de dépôt");
 await page.setInputFiles('input[accept*=".xlsx"]', jeu.liste);
 await page.waitForSelector("text=Vérifier avant d'importer");
 verifie("vérification en fenêtre dédiée", await page.isVisible("thead select"));
+
+// le statut Inami de la liste : trois choix en clair, et un avertissement
+// tant qu'aucun n'est fait (c'est une colonne obligatoire du fichier)
+const choixStatut = '[role="group"][aria-label="Statut Inami de cette liste"]';
+verifie(
+  "les trois statuts sont proposés au chargement",
+  (await page.$$eval(`${choixStatut} button`, (els) => els.map((e) => e.textContent.trim()))).join(" | ") ===
+    "conventionné | partiellement conventionné | non conventionné",
+  await page.textContent(choixStatut)
+);
+verifie("l'absence de statut est signalée", await page.isVisible("text=Sans statut, cette colonne obligatoire"));
+await page.click(`${choixStatut} >> button:text-is("non conventionné")`);
+await page.waitForTimeout(200);
+verifie("l'avertissement disparaît une fois le statut choisi", !(await page.isVisible("text=Sans statut, cette colonne obligatoire")));
+
 await page.click(`button:has-text("Importer ${A.praticiens} praticien")`);
 await page.waitForSelector("table");
+
+// la sauvegarde est différée : on attend qu'elle ait eu lieu plutôt que de
+// courser le minuteur
+await page.waitForFunction(
+  () => (JSON.parse(localStorage.getItem("ta-dentiste:v1") || "{}").prospects || []).length > 0,
+  null,
+  { timeout: 5000 }
+);
+const statutsImportes = await page.evaluate(() => {
+  const e = JSON.parse(localStorage.getItem("ta-dentiste:v1") || "{}");
+  return [...new Set((e.prospects || []).map((p) => p.statut))];
+});
+verifie(
+  "le statut choisi couvre toute la liste",
+  statutsImportes.length === 1 && statutsImportes[0] === "non conventionné",
+  JSON.stringify(statutsImportes)
+);
 
 console.log("\n3. Liste en tableau");
 const lignes = await page.$$eval("tbody tr", (els) => els.length);

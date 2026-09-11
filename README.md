@@ -96,8 +96,13 @@ exemple), un `.csv`, ou coller des lignes copiées depuis Excel. L'application :
   sites web) et affiche la correspondance, corrigeable colonne par colonne ;
 - **déduit la province du code postal** (7608 → Hainaut) ;
 - devine la province et le statut Inami depuis le nom du fichier
-  (« …non conventionnés… ») ; le statut se choisit aussi pour toute la liste, la
-  mission fournissant un fichier par statut ;
+  (« …non conventionnés… ») ;
+- laisse **choisir le statut Inami de toute la liste** — conventionné,
+  partiellement conventionné, non conventionné — en un clic, la mission
+  fournissant un fichier par statut. C'est une colonne obligatoire du fichier de
+  réponses : tant qu'aucun statut n'est choisi, l'écran le signale, car il
+  faudrait sinon le reprendre sur chacun des appels. Les praticiens dont le
+  fichier précise déjà le statut gardent le leur ;
 - écarte les lignes vides et les notes de bas de page : le nombre annoncé est
   celui qui sera vraiment importé.
 

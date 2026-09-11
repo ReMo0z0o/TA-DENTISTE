@@ -299,8 +299,11 @@ const NL = {
   "Un tableau de réponses déjà rempli (23 colonnes)": "Een al ingevulde antwoordtabel (23 kolommen)",
   "Province si absente du fichier": "Provincie als ze niet in het bestand staat",
   "Statut Inami de cette liste": "Riziv-statuut van deze lijst",
+  "Appliqué à tous les praticiens de cette liste, et déjà rempli à chaque appel. Les praticiens dont le fichier précise le statut gardent le leur.":
+    "Wordt op alle beoefenaars van deze lijst toegepast en staat bij elke oproep al ingevuld. Beoefenaars van wie het bestand het statuut vermeldt, behouden het hunne.",
+  "Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.":
+    "Zonder statuut blijft die verplichte kolom bij elke oproep in te vullen.",
   "— aucune —": "— geen —",
-  "— aucun —": "— geen —",
   "— ignorer —": "— negeren —",
   "Correspondance des colonnes": "Overeenkomst van de kolommen",
   "Corrige si une colonne n'a pas été reconnue.": "Verbeter als een kolom niet herkend werd.",
@@ -729,8 +732,11 @@ const EN = {
   "Un tableau de réponses déjà rempli (23 colonnes)": "An answer table already filled in (23 columns)",
   "Province si absente du fichier": "Province if missing from the file",
   "Statut Inami de cette liste": "INAMI status of this list",
+  "Appliqué à tous les praticiens de cette liste, et déjà rempli à chaque appel. Les praticiens dont le fichier précise le statut gardent le leur.":
+    "Applied to every practitioner in this list, and already filled in on each call. Practitioners whose status the file states keep their own.",
+  "Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.":
+    "Without a status, that mandatory column stays to be filled in on every call.",
   "— aucune —": "— none —",
-  "— aucun —": "— none —",
   "— ignorer —": "— ignore —",
   "Correspondance des colonnes": "Column mapping",
   "Corrige si une colonne n'a pas été reconnue.": "Fix it if a column wasn't recognised.",
