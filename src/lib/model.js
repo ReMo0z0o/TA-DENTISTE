@@ -228,14 +228,23 @@ export function ficheSelonAppel(fiche, call, etat) {
   };
 }
 
-/** Praticien ajouté depuis un appel, et non depuis le fichier de la mission. */
+/** Dentiste Y : proposé par un cabinet, et non pris dans le fichier reçu. */
 export function estOriente(fiche) {
   return fiche?.origine === "oriente";
 }
 
-/** Les praticiens du quota : ceux qui viennent du fichier de la mission. */
+/** Praticien encodé à la main, sans venir du fichier de la mission. */
+export function estAjoute(fiche) {
+  return fiche?.origine === "ajoute";
+}
+
+/**
+ * Les praticiens du quota : ceux du fichier reçu de Test-Achats. Ceux qu'on
+ * ajoute en cours de route — dentiste Y ou saisie à la main — s'ajoutent au
+ * travail, ils ne remplacent personne dans le compte à faire.
+ */
 export function fichesDeLaMission(prospects) {
-  return prospects.filter((p) => !estOriente(p));
+  return prospects.filter((p) => !estOriente(p) && !estAjoute(p));
 }
 
 export const ETATS_PROSPECT = [

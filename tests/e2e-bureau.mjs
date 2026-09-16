@@ -202,7 +202,64 @@ verifie(
   ligneCorrigee.replace(/\s+/g, " ").slice(0, 110)
 );
 
-console.log("\n8. Dentiste Y du scénario C");
+console.log("\n8. Un dentiste ajouté à la main rejoint la liste");
+// « Ajouter un praticien » ouvre un formulaire vierge, délié de toute fiche :
+// sans lui, taper un nom par-dessus la fiche ouverte la renommerait
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+const avantAjout = await page.$$eval("tbody tr", (e) => e.length);
+// l'appel en cours n'est pas enregistré : l'application demande confirmation
+// avant de le remplacer par une fiche vierge
+let confirmationVue = "";
+page.once("dialog", (d) => {
+  confirmationVue = d.message();
+  d.accept();
+});
+await page.click('button:has-text("Ajouter un praticien")');
+await page.waitForTimeout(400);
+verifie(
+  "l'appel en cours n'est pas jeté sans prévenir",
+  /n'est pas enregistré/.test(confirmationVue),
+  confirmationVue || "(aucune confirmation demandée)"
+);
+verifie(
+  "le formulaire s'ouvre vierge",
+  (await page.inputValue("h2:has-text('Le dentiste') >> xpath=../.. >> input >> nth=0")) === "",
+  await page.inputValue("h2:has-text('Le dentiste') >> xpath=../.. >> input >> nth=0")
+);
+const AJOUTE = "NOUVEAU, DENTISTE";
+await page.fill("h2:has-text('Le dentiste') >> xpath=../.. >> input >> nth=0", AJOUTE);
+await page.fill("h2:has-text('Le dentiste') >> xpath=../.. >> input[inputmode='tel']", "+32 2 111 22 33");
+await page.click("h2:has-text('Le dentiste') >> xpath=../.. >> button:text-is('conventionné')");
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
+await page.waitForTimeout(200);
+// bouton exact : « Enregistrer et encoder le dentiste Y » contient aussi le mot
+await page.click('button:text-is("Enregistrer et passer au suivant")');
+await page.waitForTimeout(600);
+
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(400);
+const ligneAjoutee = await page.textContent(`tbody tr:has-text("${AJOUTE}")`).catch(() => "");
+verifie("le praticien tapé à la main apparaît dans la liste", Boolean(ligneAjoutee), AJOUTE);
+verifie(
+  "il s'ajoute sans en remplacer un autre",
+  (await page.$$eval("tbody tr", (e) => e.length)) === avantAjout + 1,
+  `${await page.$$eval("tbody tr", (e) => e.length)} lignes au lieu de ${avantAjout + 1}`
+);
+verifie("il est signalé comme ajouté à la main", /ajouté à la main/.test(ligneAjoutee), ligneAjoutee.replace(/\s+/g, " ").slice(0, 110));
+verifie("son numéro l'a suivi", ligneAjoutee.includes("+32 2 111 22 33"), ligneAjoutee.replace(/\s+/g, " ").slice(0, 110));
+verifie(
+  "il ne gonfle pas le quota du fichier reçu",
+  (await page.textContent("aside")).includes(`/ ${A.praticiens} appelés`),
+  (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 80)
+);
+verifie(
+  "et la barre latérale l'annonce",
+  (await page.textContent("aside")).includes("ajouté à la main"),
+  (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 120)
+);
+
+console.log("\n9. Dentiste Y du scénario C");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(250);
 await page.click(`tbody tr:has-text("${A.dernierNom}") button:has-text("Encoder")`);
@@ -254,7 +311,7 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n9. Copier des lignes Excel depuis la liste");
+console.log("\n10. Copier des lignes Excel depuis la liste");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(300);
 await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -283,18 +340,21 @@ await page.waitForTimeout(250);
 await page.click(boutonSelection);
 await page.waitForTimeout(400);
 const tout = (await page.evaluate(() => navigator.clipboard.readText())).split("\n");
+// le fichier reçu, plus le dentiste Y du scénario C, plus celui tapé à la main
 verifie(
-  "« Tous » copie toute la liste, dentistes Y compris",
-  tout.length === A.praticiens + 1,
-  `${tout.length} lignes pour ${A.praticiens} praticiens + 1 dentiste Y`
+  "« Tous » copie toute la liste, ajouts compris",
+  tout.length === A.praticiens + 2,
+  `${tout.length} lignes pour ${A.praticiens} praticiens + 1 dentiste Y + 1 ajouté`
 );
 verifie("chaque ligne a ses 23 colonnes", tout.every((l) => l.split("\t").length === 23));
 // une ligne sans date d'appel = un praticien pas encore appelé : il doit tout
 // de même porter son identité, prêt à être complété dans Excel
 const nonAppelees = tout.map((l) => l.split("\t")).filter((c) => c[3] === "");
+// cinq appels encodés jusqu'ici : le premier praticien, le numéro corrigé,
+// celui ajouté à la main, le dentiste X du scénario C et son dentiste Y
 verifie(
   "les praticiens pas encore appelés sont du lot",
-  nonAppelees.length > 0 && nonAppelees.length === tout.length - 4,
+  nonAppelees.length > 0 && nonAppelees.length === tout.length - 5,
   `${nonAppelees.length} non appelés sur ${tout.length}`
 );
 const nue = nonAppelees[0];
@@ -333,13 +393,14 @@ verifie(
 await page.fill("input[placeholder^='Chercher']", "");
 await page.waitForTimeout(200);
 
-console.log("\n10. Journée en tableau");
+console.log("\n11. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
-// encodés jusqu'ici : le premier praticien, le numéro corrigé, le dentiste X
-// du scénario C et son dentiste Y — l'injoignable, lui, n'a rien laissé
-verifie("quatre appels encodés", appelsEncodes === 4, `${appelsEncodes} ligne(s)`);
+// encodés jusqu'ici : le premier praticien, le numéro corrigé, celui ajouté à
+// la main, le dentiste X du scénario C et son dentiste Y — l'injoignable, lui,
+// n'a rien laissé
+verifie("cinq appels encodés", appelsEncodes === 5, `${appelsEncodes} ligne(s)`);
 verifie(
   "aucune ligne créée pour l'injoignable",
   !(await page.textContent("table")).includes(nomSuivant),
@@ -350,7 +411,7 @@ verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), li
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n11. Suivi et données sur deux colonnes");
+console.log("\n12. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -432,7 +493,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n12. Aide clavier");
+console.log("\n13. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -440,7 +501,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n13. Langue de l'interface");
+console.log("\n14. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -481,7 +542,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n14. Aucune erreur JavaScript");
+console.log("\n15. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

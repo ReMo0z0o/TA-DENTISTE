@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Bouton, Puce, TEINTES, Vide, useRaccourciRecherche } from "../components/ui.jsx";
-import { ETATS_PROSPECT, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
+import { ETATS_PROSPECT, estAjoute, estOriente, fichesDeLaMission, phoneKey, telHref } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
 import { ligneTexte, tsvDesFiches } from "../lib/exporters.js";
 import { useT } from "../lib/i18n.js";
@@ -98,6 +98,7 @@ function Carte({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
             {fiche.ordre && <span className="text-[12px] text-slate-400">{fiche.ordre}</span>}
             <span className="truncate text-[15px] font-medium text-slate-900">{fiche.nom}</span>
             {estOriente(fiche) && <Puce tone="amber">{t("dentiste Y")}</Puce>}
+            {estAjoute(fiche) && <Puce>{t("ajouté à la main")}</Puce>}
           </div>
           {estOriente(fiche) && fiche.orientePar && (
             <div className="mt-0.5 text-[11.5px] text-amber-700">
@@ -235,6 +236,11 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
             {t("dentiste Y")}
           </span>
         )}
+        {estAjoute(fiche) && (
+          <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-slate-600">
+            {t("ajouté à la main")}
+          </span>
+        )}
         {doublon && (
           <span className="ml-2 text-[11px] text-red-700" title={t("Même numéro que {nom}", { nom: doublon })}>
             {t("doublon")}
@@ -310,7 +316,7 @@ function Ligne({ fiche, appel, doublon, onEncoder, onEtat, onSupprimer, flash })
 
 /* ------------------------------------------------------------- écran */
 
-export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSupprimer, onImporter, onVider, flash }) {
+export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSupprimer, onImporter, onAjouter, onVider, flash }) {
   const t = useT();
   const [filtre, setFiltre] = useState("tous");
   const [recherche, setRecherche] = useState("");
@@ -379,7 +385,14 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
           <p className="mb-3">
             {t("Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà remplis à chaque appel.")}
           </p>
-          <Bouton onClick={onImporter}>{t("Charger une liste d'appel")}</Bouton>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Bouton onClick={onImporter}>{t("Charger une liste d'appel")}</Bouton>
+            {onAjouter && (
+              <Bouton variant="ghost" onClick={onAjouter}>
+                {t("Ajouter un praticien")}
+              </Bouton>
+            )}
+          </div>
         </Vide>
       </div>
     );
@@ -522,6 +535,11 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
+        {onAjouter && (
+          <Bouton variant="ghost" onClick={onAjouter}>
+            {t("Ajouter un praticien")}
+          </Bouton>
+        )}
         <Bouton variant="ghost" onClick={onImporter}>
           {t("Ajouter une autre liste")}
         </Bouton>

@@ -7,6 +7,7 @@ import {
   aDesReponses,
   emptyCall,
   emptyProspect,
+  estAjoute,
   estOriente,
   ficheSelonAppel,
   fichesDeLaMission,
@@ -241,4 +242,30 @@ test("un champ laissé vide dans l'appel n'efface pas ce que la fiche sait", () 
   assert.equal(suivante.province, "Hainaut");
   assert.equal(suivante.statut, "conventionné");
   assert.equal(suivante.etat, "rappeler", "seule la suite à donner change");
+});
+
+/* --------------------- un praticien encodé à la main rejoint la liste d'appel */
+
+test("le quota de la mission ne compte que le fichier reçu", () => {
+  const prospects = [
+    emptyProspect({ id: "p1", nom: "DU FICHIER, UN" }),
+    emptyProspect({ id: "p2", nom: "DU FICHIER, DEUX" }),
+    emptyProspect({ id: "y1", nom: "VARGA, MIA", origine: "oriente", orienteDe: "p1" }),
+    emptyProspect({ id: "a1", nom: "TAPÉ, À LA MAIN", origine: "ajoute" }),
+  ];
+  assert.deepEqual(
+    fichesDeLaMission(prospects).map((p) => p.id),
+    ["p1", "p2"],
+    "dentiste Y et saisie à la main s'ajoutent au travail, pas au compte à faire"
+  );
+  assert.equal(estAjoute(prospects[3]), true);
+  assert.equal(estAjoute(prospects[2]), false, "un dentiste Y n'est pas une saisie à la main");
+  assert.equal(estOriente(prospects[3]), false);
+});
+
+test("une fiche venue du fichier n'est ni orientée ni ajoutée", () => {
+  const fiche = emptyProspect({ id: "p1", nom: "BOURDON, SANDY" });
+  assert.equal(fiche.origine, "liste");
+  assert.equal(estOriente(fiche), false);
+  assert.equal(estAjoute(fiche), false);
 });

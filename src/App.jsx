@@ -13,6 +13,7 @@ import {
   besoinRappel,
   emptyCall,
   emptyProspect,
+  estAjoute,
   estOriente,
   ficheSelonAppel,
   fichesDeLaMission,
@@ -229,6 +230,29 @@ export default function App() {
   const prochaines = etat.prospects.filter((p) => p.etat === "a_appeler");
   const prochaineFiche = (saufId) => prochaines.find((p) => p.id !== saufId) || null;
 
+  /**
+   * Ouvre un formulaire d'appel vierge pour un praticien qui n'est dans aucun
+   * fichier. Sans cela, taper un nom par-dessus la fiche ouverte renommerait
+   * ce praticien-là au lieu d'en ajouter un.
+   */
+  const ajoutePraticien = () => {
+    // un appel à moitié encodé ne doit pas disparaître d'un clic
+    const enCours = call.dentiste || call.telephone || call.rdvPossible;
+    if (enCours && !window.confirm(t("L'appel en cours n'est pas enregistré. Le remplacer par une fiche vierge ?"))) return;
+    setEditing(null);
+    setCall(
+      emptyCall({
+        dateAppel: today(),
+        heureAppel: nowTime(),
+        province: etat.reglages.province,
+        statut: etat.reglages.statut,
+      })
+    );
+    setOnglet("appel");
+    window.scrollTo({ top: 0 });
+    flash(t("Encode ce praticien : il rejoindra la liste une fois l'appel enregistré."));
+  };
+
   /** Enregistre l'appel en cours et renvoie l'appel enregistré. */
   const enregistreAppel = () => {
     if (!call.dentiste.trim()) {
@@ -244,11 +268,12 @@ export default function App() {
     const suite = complet.etatFiche || "fait";
     const existe = etat.calls.some((c) => c.id === complet.id);
 
-    // scénario C : le dentiste Y n'est dans aucun fichier, on lui crée sa fiche
-    // pour qu'il apparaisse dans la liste comme les autres, clairement marqué
+    // Un appel encodé sans fiche liée crée la sienne : le praticien rejoint la
+    // liste comme les autres, qu'il vienne du scénario C (dentiste Y proposé
+    // par un cabinet) ou qu'on l'ait simplement tapé à la main.
     let nouvelleFiche = null;
-    if (complet.roleY && !complet.prospectId && complet.dentiste.trim()) {
-      const parent = etat.calls.find((c) => c.id === complet.groupeDe);
+    if (!complet.prospectId && complet.dentiste.trim()) {
+      const parent = complet.roleY ? etat.calls.find((c) => c.id === complet.groupeDe) : null;
       const ficheParent = parent ? etat.prospects.find((p) => p.id === parent.prospectId) : null;
       nouvelleFiche = emptyProspect({
         id: nouvelId("p"),
@@ -261,7 +286,7 @@ export default function App() {
         commune: ficheParent?.commune || "",
         cp: ficheParent?.cp || "",
         etat: suite,
-        origine: "oriente",
+        origine: complet.roleY ? "oriente" : "ajoute",
         orienteDe: ficheParent?.id || null,
         orientePar: parent?.dentiste || "",
       });
@@ -409,6 +434,7 @@ export default function App() {
   // lesquels on nous oriente s'ajoutent, ils ne remplacent personne
   const fichesMission = fichesDeLaMission(etat.prospects);
   const orientes = etat.prospects.filter(estOriente).length;
+  const ajoutes = etat.prospects.filter(estAjoute).length;
   const faits = fichesMission.filter((p) => p.etat === "fait").length;
   const pourcent = fichesMission.length ? Math.round((faits / fichesMission.length) * 100) : 0;
 
@@ -424,6 +450,7 @@ export default function App() {
           }
           onSupprimer={(id) => majEtat((e) => ({ prospects: e.prospects.filter((p) => p.id !== id) }))}
           onImporter={() => setOnglet("donnees")}
+          onAjouter={ajoutePraticien}
           onVider={() => {
             if (window.confirm(t("Vider la liste d'appel ? Les appels déjà encodés sont conservés."))) {
               majEtat({ prospects: [] });
@@ -559,6 +586,11 @@ export default function App() {
             {orientes > 0 && (
               <div className="mt-1.5 text-[11px] text-amber-700">
                 {t.n(orientes, "+ {n} dentiste Y ajouté", "+ {n} dentistes Y ajoutés")}
+              </div>
+            )}
+            {ajoutes > 0 && (
+              <div className="mt-1.5 text-[11px] text-slate-500">
+                {t.n(ajoutes, "+ {n} praticien ajouté à la main", "+ {n} praticiens ajoutés à la main")}
               </div>
             )}
           </div>

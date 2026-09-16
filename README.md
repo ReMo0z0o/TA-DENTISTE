@@ -110,6 +110,14 @@ exemple), un `.csv`, ou coller des lignes copiées depuis Excel. L'application :
 
 Chaque praticien montre son nom, sa commune, son statut et son numéro — en
 tableau au bureau, en cartes sur téléphone, avec un bouton qui compose le numéro.
+**« Ajouter un praticien »**, en bas de la liste, ouvre un formulaire d'appel
+vierge pour un dentiste qui n'est dans aucun fichier. Il rejoint la liste dès
+l'appel enregistré, marqué « ajouté à la main ». Comme le dentiste Y du
+scénario C, il s'ajoute au travail sans gonfler le quota : le compte
+« X / 25 appelés » reste celui du fichier reçu de Test-Achats, et la barre
+latérale annonce les ajouts à part. Si un appel est en cours de saisie,
+l'application demande confirmation avant de le remplacer par une fiche vierge.
+
 Deux façons de récupérer des lignes du fichier de réponses sans quitter la
 liste :
 

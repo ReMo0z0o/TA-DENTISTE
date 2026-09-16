@@ -107,6 +107,11 @@ const NL = {
   "Aucun praticien ne correspond.": "Geen enkele beoefenaar komt overeen.",
   "Aucun praticien ne correspond à ce filtre.": "Geen enkele beoefenaar komt overeen met die filter.",
   "Ajouter une autre liste": "Nog een lijst toevoegen",
+  "Ajouter un praticien": "Een beoefenaar toevoegen",
+  "L'appel en cours n'est pas enregistré. Le remplacer par une fiche vierge ?":
+    "De lopende oproep is niet bewaard. Vervangen door een lege fiche?",
+  "Encode ce praticien : il rejoindra la liste une fois l'appel enregistré.":
+    "Codeer die beoefenaar: hij komt in de lijst zodra de oproep bewaard is.",
   "Vider la liste d'appel": "Belijst leegmaken",
   "Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà remplis à chaque appel.":
     "Nog geen belijst geladen. Importeer je bestand met beoefenaars: provincie, naam en telefoon staan dan bij elke oproep al ingevuld.",
@@ -144,6 +149,9 @@ const NL = {
   "proposé par {nom}": "voorgesteld door {nom}",
   "+ {n} dentiste Y ajouté": "+ {n} tandarts Y toegevoegd",
   "+ {n} dentistes Y ajoutés": "+ {n} tandartsen Y toegevoegd",
+  "ajouté à la main": "handmatig toegevoegd",
+  "+ {n} praticien ajouté à la main": "+ {n} beoefenaar handmatig toegevoegd",
+  "+ {n} praticiens ajoutés à la main": "+ {n} beoefenaars handmatig toegevoegd",
   "Un autre dentiste vous a été proposé : encode-le avec le bouton « Enregistrer et encoder le dentiste Y » en bas de page. Il rejoindra ta liste, marqué « dentiste Y ».":
     "Er werd een andere tandarts voorgesteld: codeer die met de knop « Bewaren en tandarts Y coderen » onderaan. Hij komt in je lijst, gemarkeerd als « tandarts Y ».",
   "Prochain praticien à appeler": "Volgende beoefenaar om te bellen",
@@ -555,6 +563,11 @@ const EN = {
   "Aucun praticien ne correspond.": "No practitioner matches.",
   "Aucun praticien ne correspond à ce filtre.": "No practitioner matches this filter.",
   "Ajouter une autre liste": "Add another list",
+  "Ajouter un praticien": "Add a practitioner",
+  "L'appel en cours n'est pas enregistré. Le remplacer par une fiche vierge ?":
+    "The call in progress is not saved. Replace it with a blank form?",
+  "Encode ce praticien : il rejoindra la liste une fois l'appel enregistré.":
+    "Record this practitioner: they join the list once the call is saved.",
   "Vider la liste d'appel": "Clear the call list",
   "Aucune liste d'appel chargée. Importe ton fichier de praticiens : province, nom et téléphone seront déjà remplis à chaque appel.":
     "No call list loaded yet. Import your practitioner file: province, name and phone will already be filled in for every call.",
@@ -592,6 +605,9 @@ const EN = {
   "proposé par {nom}": "offered by {nom}",
   "+ {n} dentiste Y ajouté": "+ {n} dentist Y added",
   "+ {n} dentistes Y ajoutés": "+ {n} dentists Y added",
+  "ajouté à la main": "added by hand",
+  "+ {n} praticien ajouté à la main": "+ {n} practitioner added by hand",
+  "+ {n} praticiens ajoutés à la main": "+ {n} practitioners added by hand",
   "Un autre dentiste vous a été proposé : encode-le avec le bouton « Enregistrer et encoder le dentiste Y » en bas de page. Il rejoindra ta liste, marqué « dentiste Y ».":
     "Another dentist was offered: record them with the “Save and record dentist Y” button at the bottom. They will join your list, marked “dentist Y”.",
   "Prochain praticien à appeler": "Next practitioner to call",
