@@ -128,11 +128,35 @@ export function etatAnnulation(call) {
   return call.annulation.parCabinet ? "annule_cabinet" : "annule";
 }
 
+/** Les classements proposés pour la liste des rendez-vous. */
+export const TRIS_RDV = [
+  { cle: "urgence", label: "À annuler en premier" },
+  { cle: "rdv", label: "Date du rendez-vous" },
+  { cle: "dentiste", label: "Dentiste (A → Z)" },
+];
+
 /**
- * Tous les rendez-vous placés, du plus urgent à annuler au plus lointain.
- * Les fiches praticiens servent à retrouver la commune.
+ * Compare deux rendez-vous selon le classement demandé. Dans tous les cas ce
+ * qui reste à annuler passe devant : c'est là qu'il y a quelque chose à faire.
  */
-export function rendezVousPlaces(calls, prospects = []) {
+function comparateurRdv(tri) {
+  const loin = (v) => String(v || "9999-99-99");
+  return (a, b) => {
+    const faitA = a.etat === "a_annuler" ? 0 : 1;
+    const faitB = b.etat === "a_annuler" ? 0 : 1;
+    if (faitA !== faitB) return faitA - faitB;
+    if (tri === "rdv") return loin(a.rdvLe).localeCompare(loin(b.rdvLe));
+    if (tri === "dentiste") return String(a.dentiste).localeCompare(String(b.dentiste), "fr");
+    return loin(a.annulerLe).localeCompare(loin(b.annulerLe));
+  };
+}
+
+/**
+ * Tous les rendez-vous placés. Par défaut du plus urgent à annuler au plus
+ * lointain ; « rdv » les classe par date de rendez-vous, pour traiter en
+ * premier ceux qui approchent. Les fiches praticiens donnent la commune.
+ */
+export function rendezVousPlaces(calls, prospects = [], tri = "urgence") {
   const parId = new Map(prospects.map((p) => [p.id, p]));
   return calls
     .filter(rdvPris)
@@ -159,13 +183,7 @@ export function rendezVousPlaces(calls, prospects = []) {
         remarques: call.remarques || "",
       };
     })
-    .sort((a, b) => {
-      // ce qui reste à annuler passe devant, puis par date d'annulation
-      const faitA = a.etat === "a_annuler" ? 0 : 1;
-      const faitB = b.etat === "a_annuler" ? 0 : 1;
-      if (faitA !== faitB) return faitA - faitB;
-      return String(a.annulerLe || "9999").localeCompare(String(b.annulerLe || "9999"));
-    });
+    .sort(comparateurRdv(tri));
 }
 
 /** Colonnes du classeur des rendez-vous : intitulé, clé, type et largeur. */

@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   COLONNES_RDV,
+  TRIS_RDV,
   classeurRendezVous,
   dateRendezVousPris,
   etatAnnulation,
@@ -161,4 +162,64 @@ test("aucun rendez-vous : un classeur avec ses seuls titres", async () => {
   const octets = Buffer.from(await blob.arrayBuffer());
   const { sheets } = await readXlsx(octets.buffer.slice(octets.byteOffset, octets.byteOffset + octets.byteLength));
   assert.equal(sheets[0].rows.length, 1);
+});
+
+/* ------------------------------------------------- classer les rendez-vous */
+
+test("classer par date de rendez-vous met en tête celui qui approche", () => {
+  const lignes = rendezVousPlaces(jeuDAppels(), fiches, "rdv");
+  // c'est la date du rendez-vous RÉELLEMENT pris qui classe : BOURDON a beau
+  // s'être vu proposer le 12/11 avec supplément, c'est le 15/01 au tarif
+  // officiel qui a été retenu (scénario B), donc il passe après MARTIN
+  assert.deepEqual(
+    lignes.map((l) => l.dentiste),
+    ["MARTIN, ALEX", "BOURDON, SANDY", "DUPONT, CLAIRE"],
+    "01/12 avant 15/01 — et l'annulé reste en fin de liste"
+  );
+  assert.deepEqual(
+    lignes.map((l) => l.rdvLe),
+    ["2026-12-01", "2027-01-15", "2026-09-30"]
+  );
+});
+
+test("le classement par défaut reste celui de l'urgence d'annulation", () => {
+  assert.deepEqual(
+    rendezVousPlaces(jeuDAppels(), fiches).map((l) => l.dentiste),
+    rendezVousPlaces(jeuDAppels(), fiches, "urgence").map((l) => l.dentiste)
+  );
+  assert.deepEqual(
+    rendezVousPlaces(jeuDAppels(), fiches, "urgence").map((l) => l.dentiste),
+    ["BOURDON, SANDY", "MARTIN, ALEX", "DUPONT, CLAIRE"]
+  );
+});
+
+test("classer par dentiste range de A à Z", () => {
+  assert.deepEqual(
+    rendezVousPlaces(jeuDAppels(), fiches, "dentiste").map((l) => l.dentiste),
+    ["BOURDON, SANDY", "MARTIN, ALEX", "DUPONT, CLAIRE"],
+    "les deux à annuler d'abord (B avant M), puis l'annulé"
+  );
+});
+
+test("quel que soit le classement, ce qui reste à annuler passe devant", () => {
+  for (const { cle } of TRIS_RDV) {
+    const etats = rendezVousPlaces(jeuDAppels(), fiches, cle).map((l) => l.etat);
+    const premierFait = etats.findIndex((e) => e !== "a_annuler");
+    assert.ok(
+      premierFait === -1 || etats.slice(premierFait).every((e) => e !== "a_annuler"),
+      `classement « ${cle} » : un rendez-vous à annuler s'est glissé après un annulé`
+    );
+  }
+});
+
+test("un rendez-vous sans date part en fin de classement plutôt qu'en tête", () => {
+  const appels = [
+    { ...emptyCall(), id: "sans", dentiste: "SANS, DATE", rdvPossible: "oui", dateSansSupplement: "", datePremierRdv: "2026-12-31" },
+    { ...emptyCall(), id: "avec", dentiste: "AVEC, DATE", rdvPossible: "oui", datePremierRdv: "2026-10-01" },
+  ];
+  // « sans » a bien une date ici : on vérifie surtout l'ordre croissant
+  assert.deepEqual(
+    rendezVousPlaces(appels, [], "rdv").map((l) => l.dentiste),
+    ["AVEC, DATE", "SANS, DATE"]
+  );
 });

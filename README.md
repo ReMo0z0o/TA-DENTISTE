@@ -200,12 +200,22 @@ scénario, puis les annulations.
   un rendez-vous y est déjà placé, la fiche le rappelle.
 - **Rendez-vous à annuler** : **tous** les rendez-vous placés depuis le début de
   la mission, à annuler comme déjà annulés (ces derniers grisés en fin de liste,
-  avec un lien pour rouvrir en cas de fausse manœuvre). Chaque fiche porte la
-  **date de l'appel**, la **date du rendez-vous** et le **numéro de téléphone**,
-  et ceux dont le cabinet est aussi à rappeler avec l'autre profil portent la
-  pastille « à rappeler — intervention majorée » : au moment d'annuler, on sait
-  qu'un second appel attend. La date d'annulation est calculée à **4 jours
-  ouvrables** après l'appel, avec le compte à rebours et un bouton « le cabinet a
+  avec un lien pour rouvrir en cas de fausse manœuvre). C'est la liste la plus
+  longue de l'onglet : elle prend toute la largeur, en **tableau** au bureau et
+  en cartes sur téléphone. Chaque ligne porte la **date de l'appel**, la **date
+  du rendez-vous** et le **numéro de téléphone**, et celles dont le cabinet est
+  aussi à rappeler avec l'autre profil portent la pastille « à rappeler —
+  intervention majorée » : au moment d'annuler, on sait qu'un second appel
+  attend.
+  **« Classer par »** range la liste à l'urgence d'annulation (par défaut), par
+  **date de rendez-vous** — pour traiter d'abord ceux qui approchent — ou par
+  dentiste ; dans tous les cas ce qui reste à annuler passe devant. **« Masquer
+  ceux déjà annulés »** raccourcit la liste une fois le travail avancé.
+  Deux pastilles, à ne pas confondre : celle du rendez-vous dit dans combien de
+  jours il tombe (rouge à l'approche : passé cette date, trop tard pour
+  annuler), celle de l'annulation dit depuis quand elle est **possible** — une
+  date dépassée n'y est pas un retard. La date d'annulation est calculée à
+  **4 jours ouvrables** après l'appel, avec un bouton « le cabinet a
   annulé lui-même » (qui l'écrit dans les remarques). Un bouton
   **« Télécharger les rendez-vous (.xlsx) »** sort tous les rendez-vous placés
   depuis le début de la mission, dans un classeur fait pour être lu :

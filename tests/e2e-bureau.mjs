@@ -424,10 +424,11 @@ verifie("le suivi se répartit sur deux colonnes", colonnesSuivi === 2, String(c
 const rubriques = await page.$$eval("section h2", (els) => els.map((e) => e.textContent.trim()));
 const rangHabituel = rubriques.indexOf("Rappels — profil habituel");
 const rangMajoree = rubriques.indexOf("Rappels avec le profil « intervention majorée »");
+const rangRdv = rubriques.indexOf("Rendez-vous à annuler");
 verifie(
-  "« Rappels — profil habituel » vient avant « intervention majorée »",
-  rangHabituel === 0 && rangMajoree === 1,
-  rubriques.slice(0, 3).join(" | ")
+  "les rubriques suivent l'ordre du travail : rappels habituels, autre profil, annulations",
+  rangHabituel === 0 && rangHabituel < rangMajoree && rangMajoree < rangRdv,
+  rubriques.join(" | ")
 );
 verifie(
   "le cabinet rappelé avec l'autre profil est listé",
@@ -449,12 +450,17 @@ verifie(
 );
 
 // les rendez-vous : tous affichés, détaillés, l'intervention majorée marquée
-const cartesRdv = await page.$$eval('[data-role="rendez-vous"]', (els) =>
+// au bureau la liste est un tableau ; les cartes du téléphone sont masquées
+const cartesRdv = await page.$$eval('[data-role="rendez-vous"]:visible', (els) =>
   els.map((e) => e.innerText.replace(/\s+/g, " "))
 );
-verifie("tous les rendez-vous placés sont affichés", cartesRdv.length === 2, `${cartesRdv.length} carte(s)`);
+verifie("tous les rendez-vous placés sont affichés", cartesRdv.length === 2, `${cartesRdv.length} ligne(s)`);
 const carteX = cartesRdv.find((c) => c.includes(A.premierNom));
-verifie("le rendez-vous porte la date d'appel", /Appel du \d{2}\/\d{2}\/\d{4}/.test(carteX), carteX?.slice(0, 140));
+verifie(
+  "le rendez-vous porte la date d'appel",
+  (carteX?.match(/\d{2}\/\d{2}\/\d{4}/g) || []).length >= 3,
+  carteX?.slice(0, 160)
+);
 verifie("le rendez-vous porte la date du rendez-vous", carteX?.includes("12/11/2026"), carteX?.slice(0, 140));
 verifie("le rendez-vous porte le numéro de téléphone", carteX?.includes(A.premierTel), carteX?.slice(0, 160));
 verifie(
@@ -463,8 +469,47 @@ verifie(
   carteX?.slice(0, 160)
 );
 
+// le classement : par défaut l'urgence d'annulation, au choix la date du
+// rendez-vous pour traiter d'abord ceux qui approchent
+const nomsRdv = async () =>
+  page.$$eval('[data-role="rendez-vous"]:visible', (els) =>
+    els.map((e) => e.querySelector("td, div")?.textContent.trim().split("\n")[0] || "")
+  );
+const datesRdv = async () =>
+  page.$$eval('[data-role="rendez-vous"]:visible', (els) =>
+    els.map((e) => (e.textContent.match(/(\d{2})\/(\d{2})\/(\d{4})/g) || [])[0] || "")
+  );
+verifie("le classement se choisit", await page.isVisible('[data-role="tri-rdv"]'));
+await page.selectOption('[data-role="tri-rdv"]', "rdv");
+await page.waitForTimeout(300);
+const parDate = (await datesRdv()).map((d) => d.split("/").reverse().join("-"));
+verifie(
+  "classés par date de rendez-vous, du plus proche au plus lointain",
+  parDate.every((d, i) => i === 0 || parDate[i - 1] <= d),
+  parDate.join(" · ")
+);
+
+await page.selectOption('[data-role="tri-rdv"]', "dentiste");
+await page.waitForTimeout(300);
+const parNom = await nomsRdv();
+verifie("classés par dentiste de A à Z", parNom.every((n, i) => i === 0 || parNom[i - 1].localeCompare(n, "fr") <= 0), parNom.join(" · "));
+
+// masquer ce qui est déjà annulé raccourcit la liste
+const avantMasque = (await nomsRdv()).length;
+await page.check('[data-role="masquer-annules"]');
+await page.waitForTimeout(300);
+verifie(
+  "masquer les annulés ne laisse que ce qui reste à faire",
+  (await nomsRdv()).length <= avantMasque && !(await page.textContent("body")).includes("rouvrir"),
+  `${await nomsRdv().then((n) => n.length)} sur ${avantMasque}`
+);
+await page.uncheck('[data-role="masquer-annules"]');
+await page.waitForTimeout(250);
+await page.selectOption('[data-role="tri-rdv"]', "urgence");
+await page.waitForTimeout(250);
+
 // le classeur des rendez-vous placés, pour préparer les annulations
-verifie("les rendez-vous placés sont annoncés", await page.isVisible("text=rendez-vous placés depuis le début"));
+verifie("ce qui reste à annuler est annoncé", await page.isVisible("text=/\\d+ sur \\d+ encore à annuler/"));
 const dlRdv = page.waitForEvent("download");
 await page.click('button:has-text("Télécharger les rendez-vous (.xlsx)")');
 const fichierRdv = path.join(SORTIES, "rendez-vous.xlsx");
