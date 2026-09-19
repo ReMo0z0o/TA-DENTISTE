@@ -326,7 +326,9 @@ await page.waitForTimeout(400);
 const ligneCopiee = await page.evaluate(() => navigator.clipboard.readText());
 const cellules = ligneCopiee.split("\t");
 verifie("une seule ligne est copiée", !ligneCopiee.includes("\n"), JSON.stringify(ligneCopiee.slice(0, 60)));
-verifie("les 23 colonnes y sont", cellules.length === 23, `${cellules.length} colonnes`);
+verifie("les 24 colonnes y sont", cellules.length === 24, `${cellules.length} colonnes`);
+verifie("le statut part en anglais, en colonne W", cellules[22] === "Done", cellules[22]);
+verifie("les remarques ont glissé en X", cellules.length === 24 && cellules[23] !== undefined, cellules[23]);
 verifie("c'est bien ce dentiste-là", cellules[1] === A.premierNom, cellules[1]);
 verifie("la province ouvre la ligne", cellules[0] === A.province, cellules[0]);
 verifie("le téléphone est repris", cellules[4] === A.premierTel, cellules[4]);
@@ -346,7 +348,18 @@ verifie(
   tout.length === A.praticiens + 2,
   `${tout.length} lignes pour ${A.praticiens} praticiens + 1 dentiste Y + 1 ajouté`
 );
-verifie("chaque ligne a ses 23 colonnes", tout.every((l) => l.split("\t").length === 23));
+verifie("chaque ligne a ses 24 colonnes", tout.every((l) => l.split("\t").length === 24));
+const statutsCopies = tout.map((l) => l.split("\t")[22]);
+verifie(
+  "chaque ligne porte son statut en anglais",
+  statutsCopies.every((v) => ["To call", "Done", "To call back", "Unreachable", "Excluded"].includes(v)),
+  [...new Set(statutsCopies)].join(" · ")
+);
+verifie(
+  "un praticien pas encore appelé est « To call », un injoignable « Unreachable »",
+  statutsCopies.includes("To call") && statutsCopies.includes("Unreachable"),
+  [...new Set(statutsCopies)].join(" · ")
+);
 // une ligne sans date d'appel = un praticien pas encore appelé : il doit tout
 // de même porter son identité, prêt à être complété dans Excel
 const nonAppelees = tout.map((l) => l.split("\t")).filter((c) => c[3] === "");
@@ -357,13 +370,25 @@ verifie(
   nonAppelees.length > 0 && nonAppelees.length === tout.length - 5,
   `${nonAppelees.length} non appelés sur ${tout.length}`
 );
-const nue = nonAppelees[0];
+// parmi les lignes sans date d'appel, on prend une fiche jamais touchée : un
+// praticien marqué injoignable n'a pas de date non plus, mais porte un statut
+const nue = nonAppelees.find((c) => c[22] === "To call");
 verifie(
   "une fiche nue garde province, nom, statut et téléphone",
   nue[0] === A.province && nue[1].length > 0 && nue[2].length > 0 && /\d/.test(nue[4]),
   JSON.stringify(nue.slice(0, 5))
 );
-verifie("et rien d'inventé au-delà", nue.slice(5).every((v) => v === ""), JSON.stringify(nue.slice(5, 10)));
+verifie(
+  "et rien d'inventé au-delà, hormis le statut en W",
+  nue.slice(5, 22).every((v) => v === "") && nue[22] === "To call" && nue[23] === "",
+  JSON.stringify(nue.slice(20))
+);
+const injoignable = tout.map((l) => l.split("\t")).find((c) => c[1] === nomSuivant);
+verifie(
+  "le praticien injoignable part avec « Unreachable », sans date d'appel",
+  injoignable && injoignable[22] === "Unreachable" && injoignable[3] === "",
+  JSON.stringify(injoignable?.slice(22))
+);
 
 await page.click("button:has-text('Injoignable') >> nth=0");
 await page.waitForTimeout(300);

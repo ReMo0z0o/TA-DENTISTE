@@ -91,12 +91,15 @@ test("la précision derrière « autres » part dans la colonne raison", () => {
   assert.equal(ligneTexte(call)[8], "autres : cabinet en travaux");
 });
 
-test("l'export en colonnes reste aligné sur les 23 colonnes", () => {
+test("l'export en colonnes reste aligné sur les 24 colonnes", () => {
   const call = emptyCall({ dentiste: "Test", dateAppel: "2026-09-01" });
   const ligne = ligneTexte(call);
-  assert.equal(ligne.length, 23);
+  assert.equal(ligne.length, 24);
   assert.equal(ligne[3], "01/09/2026");
-  assert.equal(tsv([call]).split("\t").length, 23);
+  assert.equal(tsv([call]).split("\t").length, 24);
+  // le statut en W (23e colonne), les remarques en X
+  assert.equal(ligne[22], "Done", "la suite donnée part en anglais");
+  assert.equal(ligne[23], "");
 });
 
 test("numéros de téléphone : les écritures se rejoignent", () => {

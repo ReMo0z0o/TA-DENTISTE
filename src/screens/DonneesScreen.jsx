@@ -12,9 +12,10 @@ import {
   sauvegarde,
   telecharger,
   templateFirstFreeRow,
+  templateHeaders,
   tsv,
 } from "../lib/exporters.js";
-import { besoinRappel, ordreExport, rdvPris } from "../lib/model.js";
+import { HEADERS, besoinRappel, ordreExport, rdvPris } from "../lib/model.js";
 import { frDate } from "../lib/dates.js";
 import { lisCodeDeReprise } from "../lib/reprise.js";
 import { useT } from "../lib/i18n.js";
@@ -125,8 +126,15 @@ export default function DonneesScreen({
     try {
       const buffer = await file.arrayBuffer();
       const depart = await templateFirstFreeRow(buffer);
-      setModele({ nom: file.name, buffer, depart: String(depart) });
-      flash(t("Modèle chargé : première ligne libre = ligne {n}.", { n: depart }));
+      const titres = await templateHeaders(buffer);
+      setModele({ nom: file.name, buffer, depart: String(depart), titres });
+      // l'application écrit 24 colonnes : sur un fichier qui n'a pas encore la
+      // colonne « Statut », tout glisserait d'une case à partir de W
+      flash(
+        titres.length >= HEADERS.length
+          ? t("Modèle chargé : première ligne libre = ligne {n}.", { n: depart })
+          : t("Modèle chargé, mais il n'a que {n} colonnes : ajoute « Statut » en W, avant « Remarques », sinon les statuts s'écriraient par-dessus les remarques.", { n: titres.length })
+      );
     } catch (err) {
       flash(err.message || t("Ce fichier Excel n'a pas pu être lu."));
     }

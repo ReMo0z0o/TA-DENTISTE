@@ -1,8 +1,8 @@
 // Sorties : collage Excel, .csv, classeur .xlsx neuf, remplissage du fichier
 // officiel Antwoordtabel, et sauvegarde .json pour changer d'appareil.
-import { COLUMNS, DATE_FIELDS, HEADERS, besoinRappel, emptyCall, ordreExport, rdvPris } from "./model.js";
+import { COLUMNS, DATE_FIELDS, ETAT_EN_ANGLAIS, HEADERS, besoinRappel, emptyCall, ordreExport, rdvPris } from "./model.js";
 import { frDate, stamp, today } from "./dates.js";
-import { buildXlsx, fillTemplate, templateFirstFreeRow } from "./xlsx.js";
+import { buildXlsx, fillTemplate, templateFirstFreeRow, templateHeaders } from "./xlsx.js";
 
 /**
  * Valeur d'une colonne telle qu'elle doit partir dans le fichier Excel.
@@ -13,6 +13,8 @@ export function valeurColonne(call, key) {
   if (key === "raison" && v === "autres" && String(call.raisonPrecision || "").trim()) {
     return `autres : ${String(call.raisonPrecision).trim()}`;
   }
+  // la colonne « Statut » part en anglais, c'est ce que Test-Achats attend
+  if (key === "etatFiche") return ETAT_EN_ANGLAIS[v] || "";
   return v;
 }
 
@@ -51,6 +53,9 @@ export function ligneFiche(fiche) {
       dentiste: fiche.nom || "",
       statut: fiche.statut || "",
       telephone: fiche.telephone || "",
+      // sans appel encodé, la suite est celle de la liste — surtout pas le
+      // « fait » que porte un appel neuf
+      etatFiche: fiche.etat || "a_appeler",
     })
   );
 }
@@ -108,7 +113,7 @@ export function remplirModele(buffer, calls, startRow) {
   return fillTemplate(buffer, ordreExport(calls).map(ligneExcel), { startRow });
 }
 
-export { templateFirstFreeRow };
+export { templateFirstFreeRow, templateHeaders };
 
 /* ------------------------------------------ rendez-vous à annuler */
 

@@ -1,4 +1,4 @@
-// Modèle de données : les 23 colonnes du fichier Antwoordtabel, dans l'ordre
+// Modèle de données : les 24 colonnes du fichier Antwoordtabel, dans l'ordre
 // exact, plus les champs propres à l'application (heure, suivi, liaison X/Y).
 
 export const OUI_NON = ["oui", "non"];
@@ -25,7 +25,7 @@ export const PROVINCES = [
 ];
 
 /**
- * Les 23 colonnes, dans l'ordre du fichier Excel.
+ * Les 24 colonnes, dans l'ordre du fichier Excel.
  * header : intitulé exact du fichier Antwoordtabel (sert aussi à le reconnaître)
  * label  : version courte affichée dans l'application
  */
@@ -148,8 +148,30 @@ export const COLUMNS = [
     label: "Cette consultation est…",
     header: "Si oui: a-t-on indiqué qu’une consultation chez un hygiéniste bucco-dentaire est remboursée ou non remboursée ?",
   },
+  // Colonne ajoutée au fichier de Test-Achats : la suite donnée au praticien.
+  // Elle n'est pas une question du scénario — l'application la tient déjà — et
+  // ne se saisit donc pas dans le formulaire d'appel : d'où « exportSeul ».
+  { key: "etatFiche", type: "text", exportSeul: true, label: "Statut", header: "Statut" },
   { key: "remarques", type: "textarea", label: "Remarques", header: "Remarques" },
 ];
+
+/**
+ * La colonne « Statut » part en anglais dans le fichier de réponses, quelle
+ * que soit la langue du reste. Comme les autres valeurs du fichier, c'est une
+ * donnée : elle ne suit pas la langue d'affichage de l'application.
+ */
+export const ETAT_EN_ANGLAIS = {
+  a_appeler: "To call",
+  fait: "Done",
+  rappeler: "To call back",
+  injoignable: "Unreachable",
+  ignore: "Excluded",
+};
+
+/** L'inverse, pour relire un tableau de réponses déjà rempli. */
+export const ETAT_DEPUIS_ANGLAIS = Object.fromEntries(
+  Object.entries(ETAT_EN_ANGLAIS).map(([cle, mot]) => [mot.toLowerCase(), cle])
+);
 
 export const COLUMN_KEYS = COLUMNS.map((c) => c.key);
 export const HEADERS = COLUMNS.map((c) => c.header);
@@ -287,7 +309,9 @@ export function rdvPris(call) {
 
 // ces cinq colonnes sont pré-remplies depuis la liste : leur présence ne veut
 // pas dire qu'on a obtenu des réponses
-const COLONNES_IDENTITE = ["province", "dentiste", "statut", "dateAppel", "telephone"];
+// « etatFiche » est la suite donnée, pas une réponse du cabinet : un praticien
+// injoignable dont rien n'a été encodé ne doit pas laisser de ligne dans Excel
+const COLONNES_IDENTITE = ["province", "dentiste", "statut", "dateAppel", "telephone", "etatFiche"];
 
 /**
  * L'appel a-t-il donné quelque chose à mettre dans le fichier de réponses ?

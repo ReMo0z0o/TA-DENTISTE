@@ -380,6 +380,8 @@ const NL = {
   "Télécharger le fichier rempli ({n} appels)": "Ingevuld bestand downloaden ({n} oproepen)",
   "Écriture en cours…": "Bezig met schrijven…",
   "Modèle chargé : première ligne libre = ligne {n}.": "Sjabloon geladen: eerste vrije rij = rij {n}.",
+  "Modèle chargé, mais il n'a que {n} colonnes : ajoute « Statut » en W, avant « Remarques », sinon les statuts s'écriraient par-dessus les remarques.":
+    "Sjabloon geladen, maar het telt maar {n} kolommen: voeg « Statut » toe in W, vóór « Remarques », anders komen de statussen over de opmerkingen heen.",
   "Ce fichier Excel n'a pas pu être lu.": "Dit Excel-bestand kon niet gelezen worden.",
   "{n} appels écrits à partir de la ligne {ligne}. Vérifie le fichier avant de l'envoyer.":
     "{n} oproepen weggeschreven vanaf rij {ligne}. Kijk het bestand na voor je het verstuurt.",
@@ -847,6 +849,8 @@ const EN = {
   "Télécharger le fichier rempli ({n} appels)": "Download the completed file ({n} calls)",
   "Écriture en cours…": "Writing…",
   "Modèle chargé : première ligne libre = ligne {n}.": "Template loaded: first free row = row {n}.",
+  "Modèle chargé, mais il n'a que {n} colonnes : ajoute « Statut » en W, avant « Remarques », sinon les statuts s'écriraient par-dessus les remarques.":
+    "Template loaded, but it only has {n} columns: add “Statut” in W, before “Remarques”, or the statuses would be written over the remarks.",
   "Ce fichier Excel n'a pas pu être lu.": "This Excel file could not be read.",
   "{n} appels écrits à partir de la ligne {ligne}. Vérifie le fichier avant de l'envoyer.":
     "{n} calls written from row {ligne}. Check the file before sending it.",

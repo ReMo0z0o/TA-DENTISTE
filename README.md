@@ -122,7 +122,7 @@ Deux façons de récupérer des lignes du fichier de réponses sans quitter la
 liste :
 
 - sur une fiche déjà encodée, un **bouton copier** (deux feuillets, au bout de
-  la ligne) reprend les 23 colonnes de ce seul appel. Sur téléphone, il est dans
+  la ligne) reprend les 24 colonnes de ce seul appel. Sur téléphone, il est dans
   le menu « ⋯ » de la carte, avec son libellé ;
 - sous les filtres, **« Copier les N lignes affichées »** reprend toute la
   sélection en cours — « Tous », « À appeler », « Fait », « Injoignable »,
@@ -233,6 +233,18 @@ scénario, puis les annulations.
 
 ### 5. Rendre le fichier Excel — onglet **Données**
 
+> **Colonne « Statut » (W).** Le fichier de Test-Achats en compte 23, remarques
+> comprises. La mission demande d'y ajouter une **24e colonne « Statut » en W**,
+> juste avant « Remarques » qui passe en **X**. L'application l'écrit toute
+> seule, à partir de la suite donnée au praticien dans la liste d'appel, et
+> **toujours en anglais** — `To call`, `Done`, `To call back`, `Unreachable`,
+> `Excluded` — quelle que soit la langue de l'application, comme les autres
+> valeurs du fichier de réponses. Elle part dans les trois chemins : le
+> remplissage du fichier officiel, « Copier pour Excel » et les copies de
+> l'onglet Liste. Charger un fichier qui n'a pas encore cette colonne affiche un
+> avertissement, car les statuts s'écriraient sinon par-dessus les remarques.
+
+
 Quatre sorties, de la plus directe à la plus souple :
 
 1. **Remplir le fichier de Test-Achats** — charger l'`Antwoordtabel…xlsx`
@@ -240,7 +252,7 @@ Quatre sorties, de la plus directe à la plus souple :
    **titres, listes déroulantes et mise en forme intacts**. La première ligne
    libre est détectée et reste modifiable. Les dates sont écrites comme de vraies
    dates Excel, le prix comme un nombre.
-2. **Copier pour Excel** — les 23 colonnes séparées par des tabulations, à coller
+2. **Copier pour Excel** — les 24 colonnes séparées par des tabulations, à coller
    dans la première cellule vide de la colonne A.
 3. **Classeur `.xlsx` neuf** ou **`.csv`**, si le fichier officiel n'est pas sous
    la main.
@@ -301,7 +313,7 @@ seule feuille de calcul en recopiant toutes les autres pièces du classeur
 telles quelles — d'où la conservation des listes déroulantes.
 
 ```
-src/lib/      zip, xlsx, modèle des 23 colonnes, règles de saisie, import, export,
+src/lib/      zip, xlsx, modèle des 24 colonnes, règles de saisie, import, export,
               lecture des codes de reprise, i18n + traductions (fr / nl / en),
               scénario dans les trois langues
 src/screens/  Liste · Appel · Journée · Suivi · Données

@@ -1,7 +1,7 @@
 // Import de fichiers : listes d'appel (.xlsx, .csv, collage), tableau de
 // réponses déjà commencé, et sauvegardes .json de l'application.
 import { readXlsx } from "./xlsx.js";
-import { COLUMNS, COLUMN_KEYS, DATE_FIELDS, emptyCall, emptyProspect } from "./model.js";
+import { COLUMNS, COLUMN_KEYS, DATE_FIELDS, ETAT_DEPUIS_ANGLAIS, emptyCall, emptyProspect } from "./model.js";
 import { isoDate } from "./dates.js";
 import { provinceDeCodePostal, provinceDansTexte, statutDansTexte } from "./provinces.js";
 
@@ -255,10 +255,17 @@ export function estTableauReponses(rows) {
 
 /** Tableau de réponses -> appels de l'application. */
 export function callsDepuisReponses(rows, enTete) {
+  // Sans ligne de titres, les colonnes sont lues dans l'ordre. Un collage de 23
+  // champs vient d'avant l'ajout de la colonne « Statut » : ses remarques sont
+  // en dernier, il ne faut pas les prendre pour un statut.
+  const large = rows.reduce((n, r) => Math.max(n, r.length), 0);
+  const sansStatut = COLUMN_KEYS.filter((cle) => cle !== "etatFiche");
   const ordre =
     enTete >= 0
       ? rows[enTete].map((cell) => ALIAS_REPONSES.get(normalise(cell)) || null)
-      : COLUMN_KEYS.slice();
+      : large <= sansStatut.length
+        ? sansStatut
+        : COLUMN_KEYS.slice();
   const debut = enTete >= 0 ? enTete + 1 : 0;
   const out = [];
   for (let i = debut; i < rows.length; i++) {
@@ -269,6 +276,13 @@ export function callsDepuisReponses(rows, enTete) {
       if (!key) return;
       const v = String(row[col] ?? "").trim();
       if (!v) return;
+      if (key === "etatFiche") {
+        // la colonne Statut est écrite en anglais dans le fichier : on la
+        // relit vers la clé interne, sinon la fiche afficherait « Done »
+        const cle = ETAT_DEPUIS_ANGLAIS[v.toLowerCase()];
+        if (cle) call.etatFiche = cle;
+        return;
+      }
       call[key] = DATE_FIELDS.includes(key) ? isoDate(v) : v;
     });
     if (!call.dentiste && !call.telephone) continue;

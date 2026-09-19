@@ -338,6 +338,12 @@ export async function templateFirstFreeRow(arrayBuffer) {
   return Math.max(2, lastUsedRow(sheetXml) + 1);
 }
 
+/** Les intitulés de la première ligne d'un fichier Excel. */
+export async function templateHeaders(arrayBuffer) {
+  const { sheets } = await readXlsx(arrayBuffer);
+  return sheets[0]?.rows?.[0] || [];
+}
+
 /**
  * Recopie des lignes dans un fichier Excel existant en conservant tout le reste
  * (titres, listes déroulantes, mise en forme).

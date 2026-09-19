@@ -52,6 +52,8 @@ test("détection du tableau de réponses", { skip: !dispo }, async () => {
   const detection = estTableauReponses(rows);
   assert.equal(detection.oui, true);
   assert.equal(detection.enTete, 0);
+  // le fichier fourni par Test-Achats en compte 23 : la colonne « Statut »
+  // est celle que l'utilisateur ajoute lui-même avant les remarques
   assert.equal(rows[0].length, 23);
 });
 
@@ -84,6 +86,7 @@ test("remplissage du modèle officiel", { skip: !dispo }, async () => {
       hygieniste: "non",
       infoRemboursement: "",
       remboursement: "",
+      etatFiche: "rappeler",
       remarques: 'Guillemets " et & et <balise>',
     },
   ];
@@ -106,7 +109,8 @@ test("remplissage du modèle officiel", { skip: !dispo }, async () => {
   assert.equal(ligne[3], "2026-09-01", "la date de l'appel est une vraie date");
   assert.equal(ligne[11], "2026-11-12");
   assert.equal(ligne[14], "45");
-  assert.equal(ligne[22], 'Guillemets " et & et <balise>');
+  assert.equal(ligne[22], "To call back", "la colonne W porte le statut, en anglais");
+  assert.equal(ligne[23], 'Guillemets " et & et <balise>', "les remarques ont glissé en X");
 });
 
 test("classeur neuf", async () => {
@@ -129,7 +133,7 @@ test("classeur neuf", async () => {
   assert.equal(rows[2][1], "Y");
 });
 
-test("collage de lignes Excel (23 colonnes, sans titres)", () => {
+test("collage de lignes Excel (sans titres)", () => {
   const colle = [
     "Hainaut\tBOURDON, SANDY\tconventionné\t01/09/2026\t+32 69 64 14 60\tnon\tnon\toui\t\t\t\t12/11/2026\tavec supplément\toui\t45\toui\t15/01/2027\toui\t\tnon\t\t\tRAS",
   ].join("\n");
@@ -263,7 +267,7 @@ test("la ligne copiée pour un seul dentiste est celle du collage groupé", asyn
   const groupe = tsv(appels).split("\n");
   assert.equal(ligneTexte(appels[0]).join("\t"), groupe[0], "copier une ligne ne doit rien changer à son contenu");
   assert.equal(ligneTexte(appels[1]).join("\t"), groupe[1]);
-  assert.equal(ligneTexte(appels[0]).length, 23, "les 23 colonnes du fichier de réponses");
+  assert.equal(ligneTexte(appels[0]).length, 24, "les 24 colonnes du fichier de réponses");
   assert.ok(!ligneTexte(appels[0]).join("\t").includes("\n"), "une seule ligne, collable telle quelle");
 });
 
@@ -278,9 +282,11 @@ const FICHES = [
 test("un praticien pas encore appelé donne quand même sa ligne", async () => {
   const { ligneFiche } = await import("../src/lib/exporters.js");
   const ligne = ligneFiche(FICHES[1]);
-  assert.equal(ligne.length, 23, "les 23 colonnes du fichier de réponses");
+  assert.equal(ligne.length, 24, "les 24 colonnes du fichier de réponses");
   assert.deepEqual(ligne.slice(0, 5), ["Hainaut", "MARTIN, ALEX", "conventionné", "", "+32 71 11 22 33"]);
-  assert.deepEqual(ligne.slice(5), Array(18).fill(""), "tout le reste est à compléter dans Excel");
+  assert.equal(ligne[22], "To call", "un praticien pas encore appelé n'est pas « Done »");
+  assert.deepEqual(ligne.slice(5, 22), Array(17).fill(""), "tout le reste est à compléter dans Excel");
+  assert.equal(ligne[23], "");
 });
 
 test("la sélection mélange appels encodés et fiches nues, dans l'ordre affiché", async () => {
@@ -298,7 +304,7 @@ test("la sélection mélange appels encodés et fiches nues, dans l'ordre affich
   assert.equal(lignes[1].split("\t")[1], "MARTIN, ALEX");
   assert.equal(lignes[1].split("\t")[3], "", "aucune date inventée pour un praticien pas appelé");
   assert.equal(lignes[2].split("\t")[2], "non conventionné", "chaque fiche garde son statut");
-  assert.ok(lignes.every((l) => l.split("\t").length === 23));
+  assert.ok(lignes.every((l) => l.split("\t").length === 24));
 });
 
 test("copier une sélection vide ne produit rien", async () => {
@@ -311,4 +317,74 @@ test("la ligne d'une sélection d'un seul praticien est celle du bouton de sa li
   const { emptyCall } = await import("../src/lib/model.js");
   const appel = emptyCall({ id: "c1", prospectId: "p1", dentiste: "BOURDON, SANDY", province: "Hainaut", dateAppel: "2026-09-01" });
   assert.equal(tsvDesFiches([FICHES[0]], [appel]), ligneTexte(appel).join("\t"));
+});
+
+/* ----------------------------------- la colonne « Statut », en W et en anglais */
+
+test("la colonne Statut est en W, les remarques en X", async () => {
+  const { HEADERS, COLUMN_KEYS } = await import("../src/lib/model.js");
+  assert.equal(HEADERS.length, 24);
+  assert.equal(HEADERS[22], "Statut");
+  assert.equal(COLUMN_KEYS[22], "etatFiche");
+  assert.equal(HEADERS[23], "Remarques");
+});
+
+test("chaque suite donnée a son mot anglais", async () => {
+  const { ETATS_PROSPECT, ETAT_EN_ANGLAIS, emptyCall } = await import("../src/lib/model.js");
+  const { ligneTexte } = await import("../src/lib/exporters.js");
+  for (const { key } of ETATS_PROSPECT) {
+    assert.ok(ETAT_EN_ANGLAIS[key], `« ${key} » n'a pas de traduction anglaise`);
+    assert.equal(ligneTexte(emptyCall({ etatFiche: key }))[22], ETAT_EN_ANGLAIS[key]);
+  }
+  assert.deepEqual(
+    ETATS_PROSPECT.map((e) => ETAT_EN_ANGLAIS[e.key]),
+    ["To call", "Done", "To call back", "Unreachable", "Excluded"]
+  );
+});
+
+test("le statut ne suit pas la langue de l'application", async () => {
+  const { emptyCall } = await import("../src/lib/model.js");
+  const { ligneTexte } = await import("../src/lib/exporters.js");
+  // comme les autres valeurs du fichier de réponses, c'est une donnée : elle
+  // s'écrit toujours pareil, quelle que soit la langue choisie à l'écran
+  assert.equal(ligneTexte(emptyCall({ etatFiche: "injoignable" }))[22], "Unreachable");
+});
+
+test("un statut inconnu laisse la case vide plutôt que d'écrire n'importe quoi", async () => {
+  const { emptyCall } = await import("../src/lib/model.js");
+  const { ligneTexte } = await import("../src/lib/exporters.js");
+  assert.equal(ligneTexte(emptyCall({ etatFiche: "" }))[22], "");
+  assert.equal(ligneTexte(emptyCall({ etatFiche: "n_importe_quoi" }))[22], "");
+});
+
+test("la suite donnée n'est pas une réponse du cabinet", async () => {
+  const { aDesReponses, emptyCall } = await import("../src/lib/model.js");
+  // sinon un cabinet injoignable dont rien n'a été encodé laisserait une ligne
+  // vide dans le fichier de Test-Achats
+  assert.equal(aDesReponses(emptyCall({ dentiste: "X", etatFiche: "injoignable" })), false);
+  assert.equal(aDesReponses(emptyCall({ dentiste: "X", etatFiche: "fait", rdvPossible: "oui" })), true);
+});
+
+test("un tableau de réponses rempli se relit, statut anglais compris", () => {
+  const colle = [
+    HEADERS.join("\t"),
+    "Hainaut\tBOURDON, SANDY\tconventionné\t01/09/2026\t+32 69 64 14 60\tnon\tnon\toui\t\t\t\t12/11/2026\tavec supplément\toui\t45\toui\t15/01/2027\toui\t\tnon\t\t\tTo call back\tRAS",
+  ].join("\n");
+  const rows = parseDelimited(colle);
+  const detection = estTableauReponses(rows);
+  const appels = callsDepuisReponses(rows, detection.enTete);
+  assert.equal(appels.length, 1);
+  assert.equal(appels[0].etatFiche, "rappeler", "« To call back » redevient la clé interne");
+  assert.equal(appels[0].remarques, "RAS");
+});
+
+test("un collage de 23 champs, d'avant la colonne Statut, garde ses remarques", () => {
+  // ce que produisaient les versions précédentes : sans la colonne W, le
+  // dernier champ est bien la remarque
+  const colle =
+    "Hainaut\tBOURDON, SANDY\tconventionné\t01/09/2026\t+32 69 64 14 60\tnon\tnon\toui\t\t\t\t12/11/2026\tavec supplément\toui\t45\toui\t15/01/2027\toui\t\tnon\t\t\tRAS";
+  const rows = parseDelimited(colle);
+  const appels = callsDepuisReponses(rows, estTableauReponses(rows).enTete);
+  assert.equal(appels[0].remarques, "RAS", "la remarque ne doit pas glisser dans le statut");
+  assert.equal(appels[0].etatFiche, "fait", "le statut reste celui d'un appel neuf");
 });

@@ -446,7 +446,12 @@ export default function App() {
           calls={etat.calls}
           onEncoder={ouvreAppel}
           onEtat={(id, valeur) =>
-            majEtat((e) => ({ prospects: e.prospects.map((p) => (p.id === id ? { ...p, etat: valeur } : p)) }))
+            // la colonne « Statut » du fichier Excel vient de l'appel : changer
+            // l'état depuis la liste doit l'y reporter, sinon l'export ment
+            majEtat((e) => ({
+              prospects: e.prospects.map((p) => (p.id === id ? { ...p, etat: valeur } : p)),
+              calls: e.calls.map((c) => (c.prospectId === id ? { ...c, etatFiche: valeur } : c)),
+            }))
           }
           onSupprimer={(id) => majEtat((e) => ({ prospects: e.prospects.filter((p) => p.id !== id) }))}
           onImporter={() => setOnglet("donnees")}

@@ -115,7 +115,8 @@ await page.waitForTimeout(250);
 await page.click(`li:has-text("${A.premierNom}"):visible >> button:has-text("Copier la ligne Excel")`);
 await page.waitForTimeout(400);
 const ligneMobile = await page.evaluate(() => navigator.clipboard.readText());
-verifie("une seule ligne de 23 colonnes", ligneMobile.split("\t").length === 23 && !ligneMobile.includes("\n"), `${ligneMobile.split("\t").length} colonnes`);
+verifie("une seule ligne de 24 colonnes", ligneMobile.split("\t").length === 24 && !ligneMobile.includes("\n"), `${ligneMobile.split("\t").length} colonnes`);
+verifie("le statut y est, en anglais", ligneMobile.split("\t")[22] === "Done", ligneMobile.split("\t")[22]);
 verifie("c'est bien ce dentiste-là", ligneMobile.split("\t")[1] === A.premierNom, ligneMobile.split("\t")[1]);
 
 console.log("\n6. Remplissage du fichier Excel officiel");
