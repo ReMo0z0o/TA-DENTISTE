@@ -246,13 +246,55 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
 );
 
-console.log("\n8. Un numéro corrigé pendant l'appel");
+console.log("\n8. Enregistrer sans passer au suivant");
+// Deux gestes, deux boutons : enchaîner les appels, ou enregistrer et rester
+// sur la fiche pour la relire et la compléter.
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(250);
+const aRelire = A.troisiemeNom;
+await page.click(`tbody tr:has-text("${aRelire}") button:has-text("Encoder")`);
+await page.waitForTimeout(350);
+/** Combien d'appels sont écrits pour ce praticien. */
+const appelsDe = (nom) =>
+  page.evaluate((n) => {
+    const e = JSON.parse(localStorage.getItem("ta-dentiste:v1") || "{}");
+    const fiche = (e.prospects || []).find((p) => p.nom === n);
+    return (e.calls || []).filter((c) => c.prospectId === fiche?.id).length;
+  }, nom);
+
+verifie(
+  "les deux façons d'enregistrer sont proposées",
+  (await page.isVisible('button:has-text("et passer au suivant")')) && (await page.isVisible('button:text-is("Enregistrer")'))
+);
+await page.click('button:text-is("Enregistrer")');
+await page.waitForTimeout(450);
+verifie("la fiche reste ouverte", (await page.textContent("section >> nth=0")).includes(aRelire), aRelire);
+verifie("l'application dit qu'on y reste", await page.isVisible("text=Tu restes sur cette fiche"));
+verifie("et rien n'a filé au praticien suivant", !(await page.textContent("body")).includes("Au suivant"));
+verifie("l'appel est écrit une fois", (await appelsDe(aRelire)) === 1, `${await appelsDe(aRelire)} appel(s)`);
+verifie("le bouton passe à « Mettre à jour »", await page.isVisible('button:text-is("Mettre à jour")'));
+
+// un second enregistrement corrige l'appel, il n'en crée pas un autre
+await page.click("h2:has-text('Hygiéniste') >> xpath=../.. >> button:text-is('non')");
+await page.waitForTimeout(150);
+await page.keyboard.press("Control+Shift+Enter");
+await page.waitForTimeout(450);
+verifie("Ctrl+Maj+Entrée enregistre aussi sans quitter la fiche", (await page.textContent("section >> nth=0")).includes(aRelire), aRelire);
+verifie("toujours un seul appel pour ce praticien", (await appelsDe(aRelire)) === 1, `${await appelsDe(aRelire)} appel(s)`);
+const hygieneGardee = await page.evaluate((n) => {
+  const e = JSON.parse(localStorage.getItem("ta-dentiste:v1") || "{}");
+  const fiche = (e.prospects || []).find((p) => p.nom === n);
+  return (e.calls || []).find((c) => c.prospectId === fiche?.id)?.hygieniste;
+}, aRelire);
+verifie("la correction est bien enregistrée", hygieneGardee === "non", String(hygieneGardee));
+
+console.log("\n9. Un numéro corrigé pendant l'appel");
 // le fichier de la mission se trompe souvent d'un chiffre : on corrige sur la
 // fiche d'appel, et la liste doit suivre — sinon on rappelle le mauvais numéro
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(250);
 const aCorriger = A.troisiemeNom;
-await page.click(`tbody tr:has-text("${aCorriger}") button:has-text("Encoder")`);
+await page.click(`tbody tr:has-text("${aCorriger}") button:text-is("Revoir")`);
 await page.waitForTimeout(300);
 await page.click("h2:has-text('Le dentiste') >> xpath=../.. >> button:has-text('Modifier')");
 await page.waitForTimeout(200);
@@ -261,7 +303,7 @@ await page.fill("h2:has-text('Le dentiste') >> xpath=../.. >> input[inputmode='t
 await page.waitForTimeout(150);
 await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
 await page.waitForTimeout(200);
-await page.click('button:has-text("Enregistrer et passer")');
+await page.click('button:has-text("et passer au suivant")');
 await page.waitForTimeout(500);
 
 await page.keyboard.press("Alt+1");
@@ -273,7 +315,7 @@ verifie(
   ligneCorrigee.replace(/\s+/g, " ").slice(0, 110)
 );
 
-console.log("\n9. Un dentiste ajouté à la main rejoint la liste");
+console.log("\n10. Un dentiste ajouté à la main rejoint la liste");
 // « Ajouter un praticien » ouvre un formulaire vierge, délié de toute fiche :
 // sans lui, taper un nom par-dessus la fiche ouverte la renommerait
 await page.keyboard.press("Alt+1");
@@ -330,7 +372,7 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 120)
 );
 
-console.log("\n10. Dentiste Y du scénario C");
+console.log("\n11. Dentiste Y du scénario C");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(250);
 await page.click(`tbody tr:has-text("${A.dernierNom}") button:has-text("Encoder")`);
@@ -382,7 +424,7 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n11. Copier des lignes Excel depuis la liste");
+console.log("\n12. Copier des lignes Excel depuis la liste");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(300);
 await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -489,7 +531,7 @@ verifie(
 await page.fill("input[placeholder^='Chercher']", "");
 await page.waitForTimeout(200);
 
-console.log("\n12. Journée en tableau");
+console.log("\n13. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
@@ -507,7 +549,7 @@ verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), li
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n13. Suivi et données sur deux colonnes");
+console.log("\n14. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -634,7 +676,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n14. Aide clavier");
+console.log("\n15. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -642,7 +684,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n15. Langue de l'interface");
+console.log("\n16. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -683,7 +725,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n16. Aucune erreur JavaScript");
+console.log("\n17. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

@@ -189,6 +189,7 @@ export default function AppelScreen({
   fiche,
   editing,
   onSave,
+  onSaveSeul,
   onCancel,
   onDentisteY,
   afficherTout,
@@ -488,16 +489,30 @@ export default function AppelScreen({
           className="fixed right-0 bottom-[56px] left-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:sticky lg:right-auto lg:bottom-0 lg:left-auto lg:rounded-t-xl lg:border-x lg:px-3"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
         >
-          <div className="mx-auto flex max-w-2xl items-center gap-2 lg:max-w-none">
+          <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-2 lg:max-w-none">
+            {/* deux façons d'enregistrer : enchaîner les appels, ou rester sur
+                la fiche pour la relire et la corriger */}
             <Bouton onClick={onSave} className="flex-1 lg:flex-none">
               {editing
-                ? t("Mettre à jour l'appel")
+                ? t("Mettre à jour et passer au suivant")
                 : suite === "fait"
                   ? t("Enregistrer et passer au suivant")
                   : t("Marquer « {etat} » et passer au suivant", { etat: t(LIBELLE_ETAT[suite]) })}
             </Bouton>
+            <Bouton
+              variant="ghost"
+              onClick={onSaveSeul}
+              className="shrink-0"
+              title={t("Enregistrer et rester sur cette fiche")}
+            >
+              {editing ? t("Mettre à jour") : t("Enregistrer")}
+            </Bouton>
             <span className="hidden text-[11.5px] text-slate-400 lg:inline">
               <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">Ctrl</kbd> +{" "}
+              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">{t("Entrée")}</kbd>
+              {" · "}
+              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">Ctrl</kbd> +{" "}
+              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">{t("Maj")}</kbd> +{" "}
               <kbd className="rounded border border-slate-200 bg-slate-50 px-1 font-sans">{t("Entrée")}</kbd>
             </span>
             {editing && (

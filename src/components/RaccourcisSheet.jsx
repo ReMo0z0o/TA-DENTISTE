@@ -33,6 +33,7 @@ export default function RaccourcisSheet() {
         [["Alt", "→"], t("Fiche suivante, sans enregistrer")],
         [["Ctrl", t("Entrée")], t("Enregistrer et passer au praticien suivant")],
         [["Ctrl", "S"], t("Idem — le réflexe « enregistrer »")],
+        [["Ctrl", t("Maj"), t("Entrée")], t("Enregistrer et rester sur la fiche")],
         [["Tab"], t("Champ ou groupe de réponses suivant")],
         [["←", "→"], t("Choisir une réponse dans le groupe sélectionné")],
         [[t("Espace")], t("Valider la réponse sélectionnée")],

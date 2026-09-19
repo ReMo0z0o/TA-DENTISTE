@@ -93,6 +93,12 @@ await page.click("button:text-is('sans supplément')");
 const sansSupp = await page.$$eval("input[type='date']", (els) => els.map((e) => e.value));
 verifie("date sans supplément recopiée", sansSupp[2] === "2026-11-12", sansSupp.join(" | "));
 await page.click("h2:has-text('Hygiéniste') >> xpath=../.. >> button:text-is('non')");
+// au téléphone aussi, les deux façons d'enregistrer tiennent dans la barre
+verifie(
+  "les deux boutons d'enregistrement sont atteignables",
+  (await page.isVisible('button:has-text("Enregistrer et passer au suivant")')) &&
+    (await page.isVisible('button:text-is("Enregistrer")'))
+);
 await page.click('button:has-text("Enregistrer et passer au suivant")');
 await page.waitForSelector("text=/Au suivant/");
 verifie("appel enregistré et fiche suivante ouverte", true);

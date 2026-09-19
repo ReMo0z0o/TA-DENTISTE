@@ -152,7 +152,9 @@ export default function App() {
       }
       if (commande && (e.key === "Enter" || e.key.toLowerCase() === "s")) {
         e.preventDefault();
-        actions.current.enregistrer?.();
+        // Maj enfoncée : enregistrer sans quitter la fiche
+        if (e.shiftKey) actions.current.enregistrerSeul?.();
+        else actions.current.enregistrer?.();
         return;
       }
       if (e.altKey && /^[1-5]$/.test(e.key)) {
@@ -357,6 +359,30 @@ export default function App() {
     return { ...complet, garde, suite };
   };
 
+  /**
+   * Enregistre sans quitter la fiche. Utile quand on n'a pas fini : on note ce
+   * qu'on a, on met de côté un instant, on reprend la même fiche. Le
+   * formulaire passe en modification de l'appel qui vient d'être écrit, si
+   * bien qu'un second enregistrement le corrige au lieu d'en créer un autre.
+   */
+  const enregistreSeul = () => {
+    const complet = enregistreAppel();
+    if (!complet) return;
+    const { garde, suite, ...enregistre } = complet;
+    setCall({ ...emptyCall(), ...enregistre, etatFiche: suite });
+    // rien n'a été écrit dans le fichier de réponses : il n'y a pas d'appel à
+    // rouvrir, seulement une fiche marquée
+    setEditing(garde ? enregistre.id : null);
+    flash(
+      suite === "fait"
+        ? t("Appel enregistré. Tu restes sur cette fiche.")
+        : t("{fiche} : {etat}. Tu restes sur cette fiche.", {
+            fiche: enregistre.dentiste,
+            etat: t(LIBELLE_ETAT[suite]),
+          })
+    );
+  };
+
   const enregistreEtSuivant = () => {
     const complet = enregistreAppel();
     if (!complet) return;
@@ -469,6 +495,7 @@ export default function App() {
 
   actions.current = {
     enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null),
+    enregistrerSeul: () => (onglet === "appel" ? enregistreSeul() : null),
     voisine: (pas) => (onglet === "appel" ? vaVersFiche(pas) : null),
   };
 
@@ -522,6 +549,7 @@ export default function App() {
           doublon={doublon}
           editing={editing}
           onSave={enregistreEtSuivant}
+          onSaveSeul={enregistreSeul}
           onCancel={() => {
             setEditing(null);
             setCall(emptyCall({ dateAppel: today() }));
