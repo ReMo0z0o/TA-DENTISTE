@@ -29,6 +29,8 @@ export default function RaccourcisSheet() {
     {
       titre: t("Pendant l'encodage"),
       lignes: [
+        [["Alt", "←"], t("Fiche précédente, sans enregistrer")],
+        [["Alt", "→"], t("Fiche suivante, sans enregistrer")],
         [["Ctrl", t("Entrée")], t("Enregistrer et passer au praticien suivant")],
         [["Ctrl", "S"], t("Idem — le réflexe « enregistrer »")],
         [["Tab"], t("Champ ou groupe de réponses suivant")],

@@ -131,6 +131,14 @@ liste :
   le téléphone, le reste étant à compléter dans Excel. Aucune date n'est
   inventée pour un appel qui n'a pas eu lieu.
 
+Une fois une fiche ouverte, une barre **« ‹ précédent · 3 / 25 · suivant › »**
+permet de les **feuilleter une par une**, sans rien enregistrer : les voisins
+sont nommés, et `Alt` + `←` / `→` fait la même chose au clavier. Le parcours est
+celui que la liste affichait au moment du clic — **filtre et recherche
+compris** : partir de « À rappeler » ne fait défiler que ceux-là. Si un appel
+est commencé mais pas enregistré, l'application demande confirmation avant de
+passer à la fiche suivante.
+
 « Encoder » ouvre le formulaire avec province, dentiste, téléphone, statut, date
 **et heure** déjà remplis. Un bandeau rouge prévient si un numéro
 apparaît deux fois : le scénario interdit d'appeler deux fois le même cabinet.

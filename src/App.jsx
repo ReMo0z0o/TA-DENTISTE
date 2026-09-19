@@ -12,6 +12,7 @@ import {
   aDesReponses,
   besoinRappel,
   emptyCall,
+  COLUMN_KEYS,
   emptyProspect,
   estAjoute,
   estOriente,
@@ -76,6 +77,8 @@ export default function App() {
   const [etat, setEtat] = useState(null);
   const [call, setCall] = useState(() => emptyCall());
   const [editing, setEditing] = useState(null);
+  // la suite de fiches qu'on feuillette, telle que la liste l'affichait
+  const [parcours, setParcours] = useState(null);
   const [onglet, setOnglet] = useState("liste");
   const [message, setMessage] = useState("");
   const [scenario, setScenario] = useState(false);
@@ -157,6 +160,11 @@ export default function App() {
         setOnglet(ONGLETS[Number(e.key) - 1][0]);
         return;
       }
+      if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        e.preventDefault();
+        actions.current.voisine?.(e.key === "ArrowRight" ? 1 : -1);
+        return;
+      }
       if (saisie || commande || e.altKey) return;
       if (e.key === "?") {
         e.preventDefault();
@@ -202,7 +210,13 @@ export default function App() {
   const suiteDe = (call, fiche) =>
     call?.etatFiche || (fiche && fiche.etat !== "a_appeler" ? fiche.etat : "fait");
 
-  const ouvreAppel = (fiche) => {
+  /**
+   * Feuilleter les fiches une par une. « parcours » est la suite d'identifiants
+   * telle que la liste l'affichait au moment du clic : filtre et recherche
+   * compris, on reste dans la sélection qu'on avait sous les yeux.
+   */
+  const ouvreAppel = (fiche, suite) => {
+    if (suite !== undefined) setParcours(Array.isArray(suite) && suite.length ? suite : null);
     const existant = etat.calls.find((c) => c.prospectId === fiche.id);
     if (existant) {
       setCall({ ...emptyCall(), ...existant, etatFiche: suiteDe(existant, fiche) });
@@ -225,6 +239,36 @@ export default function App() {
     }
     setOnglet("appel");
     window.scrollTo({ top: 0 });
+  };
+
+  // Ordre de feuilletage : celui de la liste si on vient de là, sinon le fichier
+  const ordreFiches = parcours?.length ? parcours : etat.prospects.map((p) => p.id);
+  const rangFiche = call.prospectId ? ordreFiches.indexOf(call.prospectId) : -1;
+  const ficheVoisine = (pas) => {
+    if (rangFiche < 0) return null;
+    const id = ordreFiches[rangFiche + pas];
+    return (id && etat.prospects.find((p) => p.id === id)) || null;
+  };
+
+  /**
+   * Ce qui est tapé à l'écran diffère-t-il de ce qui est enregistré ? Feuilleter
+   * ne doit pas jeter un encodage en cours sans prévenir.
+   */
+  const modifsNonEnregistrees = () => {
+    const enregistre = editing ? etat.calls.find((c) => c.id === editing) : null;
+    // « etatFiche » est reposé à l'ouverture depuis la fiche : le comparer
+    // signalerait une modification là où il n'y en a pas
+    const cles = COLUMN_KEYS.filter((cle) => cle !== "etatFiche");
+    if (!enregistre) return aDesReponses(call);
+    return cles.some((cle) => String(call[cle] ?? "") !== String(enregistre[cle] ?? ""));
+  };
+
+  /** Va à la fiche précédente (-1) ou suivante (+1) du parcours. */
+  const vaVersFiche = (pas) => {
+    const cible = ficheVoisine(pas);
+    if (!cible) return;
+    if (modifsNonEnregistrees() && !window.confirm(t("Cet appel n'est pas enregistré. Passer à la fiche suivante sans le garder ?"))) return;
+    ouvreAppel(cible);
   };
 
   const prochaines = etat.prospects.filter((p) => p.etat === "a_appeler");
@@ -423,7 +467,10 @@ export default function App() {
     flash(remplacer ? t("Sauvegarde chargée.") : t("Sauvegarde ajoutée à ce qui existait déjà."));
   };
 
-  actions.current = { enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null) };
+  actions.current = {
+    enregistrer: () => (onglet === "appel" ? enregistreEtSuivant() : null),
+    voisine: (pas) => (onglet === "appel" ? vaVersFiche(pas) : null),
+  };
 
   // le badge de l'onglet Suivi compte tout ce qui y reste à faire
   const aRappeler = etat.prospects.filter((p) => p.etat === "rappeler").length;
@@ -484,6 +531,14 @@ export default function App() {
           setAfficherTout={(v) => majEtat((e) => ({ reglages: { ...e.reglages, afficherTout: v } }))}
           fileAttente={prochaines}
           onOuvrirFiche={ouvreAppel}
+          navigation={{
+            rang: rangFiche,
+            total: ordreFiches.length,
+            precedent: ficheVoisine(-1),
+            suivant: ficheVoisine(1),
+            surPrecedent: () => vaVersFiche(-1),
+            surSuivant: () => vaVersFiche(1),
+          }}
         />
       )}
 

@@ -398,7 +398,10 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
     );
   }
 
-  const commun = { onEncoder, onEtat, onSupprimer, flash };
+  // ouvrir une fiche emporte la suite affichée : on feuillettera dans l'ordre
+  // qu'on avait sous les yeux, filtre et recherche compris
+  const ouvre = (fiche) => onEncoder(fiche, filtres.map((f) => f.id));
+  const commun = { onEncoder: ouvre, onEtat, onSupprimer, flash };
 
   return (
     <div className="pb-24 lg:pb-0">
@@ -413,7 +416,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
           <div className="h-full rounded-full bg-teal-700 transition-all" style={{ width: `${pourcent}%` }} />
         </div>
         {restants.length > 0 && (
-          <Bouton onClick={() => onEncoder(restants[0])} className="mt-3 w-full">
+          <Bouton onClick={() => ouvre(restants[0])} className="mt-3 w-full">
             {t("Appeler le suivant : {nom}", { nom: restants[0].nom })}
           </Bouton>
         )}
@@ -433,7 +436,7 @@ export default function ListeScreen({ prospects, calls, onEncoder, onEtat, onSup
           </kbd>
         </div>
         {restants.length > 0 && (
-          <Bouton onClick={() => onEncoder(restants[0])} className="hidden shrink-0 lg:block">
+          <Bouton onClick={() => ouvre(restants[0])} className="hidden shrink-0 lg:block">
             {t("Appeler le suivant : {nom}", { nom: restants[0].nom })}
           </Bouton>
         )}

@@ -126,7 +126,78 @@ await page.click("button:has-text('Ouvrir sa fiche')");
 await page.waitForTimeout(200);
 verifie("fiche pré-remplie depuis la liste", (await page.textContent("section")).includes(A.premierNom));
 
-console.log("\n5. Encodage au clavier");
+console.log("\n5. Feuilleter les fiches une par une");
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+await page.click("tbody tr:nth-child(2) button:has-text('Encoder')");
+await page.waitForTimeout(400);
+const barre = '[data-role="navigation-fiches"]';
+const rang = async () => (await page.textContent(barre)).replace(/\s+/g, " ").match(/(\d+) \/ (\d+)/)?.[0];
+const ouverte = async () => (await page.textContent("h2:has-text('Le dentiste') >> xpath=../..")).trim().split("\n")[0].trim();
+verifie("la fiche ouverte annonce son rang", (await rang()) === `2 / ${A.praticiens}`, await rang());
+verifie("le voisin précédent est nommé", (await page.textContent('[data-role="fiche-precedente"]')).includes(A.premierNom), A.premierNom);
+
+await page.click('[data-role="fiche-suivante"]');
+await page.waitForTimeout(350);
+verifie("« suivant » avance d'une fiche", (await rang()) === `3 / ${A.praticiens}`, await rang());
+verifie("et c'est bien le praticien suivant", (await ouverte()).includes(A.troisiemeNom), await ouverte());
+
+await page.click('[data-role="fiche-precedente"]');
+await page.click('[data-role="fiche-precedente"]');
+await page.waitForTimeout(350);
+verifie("« précédent » revient en arrière", (await rang()) === `1 / ${A.praticiens}`, await rang());
+verifie("en tête de liste, « précédent » est éteint", await page.isDisabled('[data-role="fiche-precedente"]'));
+
+await page.keyboard.press("Alt+ArrowRight");
+await page.waitForTimeout(350);
+verifie("Alt+→ feuillette aussi", (await rang()) === `2 / ${A.praticiens}`, await rang());
+await page.keyboard.press("Alt+ArrowLeft");
+await page.waitForTimeout(350);
+verifie("Alt+← revient", (await rang()) === `1 / ${A.praticiens}`, await rang());
+
+// le parcours suit ce que la liste affichait : filtre et recherche compris
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(300);
+await page.fill("input[placeholder^='Chercher']", "mons");
+await page.waitForTimeout(350);
+const nbFiltre = await page.$$eval("tbody tr", (e) => e.length);
+await page.click("tbody tr:nth-child(1) button:has-text('Encoder')");
+await page.waitForTimeout(400);
+verifie(
+  "on feuillette la sélection filtrée, pas toute la liste",
+  (await rang()) === `1 / ${nbFiltre}` && nbFiltre < A.praticiens,
+  `${await rang()} pour ${nbFiltre} lignes filtrées`
+);
+
+// un appel commencé ne disparaît pas d'un clic
+await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('non')");
+await page.waitForTimeout(250);
+let prevenu = "";
+page.once("dialog", (d) => {
+  prevenu = d.message();
+  d.dismiss();
+});
+await page.click('[data-role="fiche-suivante"]');
+await page.waitForTimeout(400);
+verifie("un encodage en cours n'est pas jeté sans prévenir", /n'est pas enregistré/.test(prevenu), prevenu || "(rien demandé)");
+verifie("et refuser garde la fiche ouverte", (await rang()) === `1 / ${nbFiltre}`, await rang());
+
+// on rend l'écran tel qu'on l'a trouvé : recherche vide, et la fiche du
+// premier praticien ouverte pour la section suivante
+await page.keyboard.press("Alt+1");
+await page.waitForTimeout(250);
+await page.fill("input[placeholder^='Chercher']", "");
+await page.waitForTimeout(300);
+await page.click("button:has-text('Ouvrir sa fiche'), tbody tr:nth-child(1) button:has-text('Encoder')");
+await page.waitForTimeout(400);
+
+console.log("\n6. Encodage au clavier");
+verifie("la fiche du premier praticien est ouverte", (await page.textContent("section >> nth=0")).includes(A.premierNom), A.premierNom);
+// les pastilles du statut ne sont dépliées que si le bloc identité l'est
+if (await page.isVisible("h2:has-text('Le dentiste') >> xpath=../.. >> button:has-text('Modifier')")) {
+  await page.click("h2:has-text('Le dentiste') >> xpath=../.. >> button:has-text('Modifier')");
+  await page.waitForTimeout(200);
+}
 await page.click("button:text-is('conventionné')");
 await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
 await page.fill('input[type="date"] >> nth=1', "2026-11-12");
@@ -150,7 +221,7 @@ await page.keyboard.press("Control+Enter");
 await page.waitForTimeout(400);
 verifie("Ctrl+Entrée enregistre et enchaîne", (await page.textContent("body")).includes("Au suivant"));
 
-console.log("\n6. Suite à donner depuis la fiche");
+console.log("\n7. Suite à donner depuis la fiche");
 // on est sur la fiche du deuxième praticien : personne ne décroche
 const nomSuivant = A.deuxiemeNom;
 verifie("fiche suivante ouverte", (await page.textContent("section >> nth=0")).includes(nomSuivant), nomSuivant);
@@ -175,7 +246,7 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 60)
 );
 
-console.log("\n7. Un numéro corrigé pendant l'appel");
+console.log("\n8. Un numéro corrigé pendant l'appel");
 // le fichier de la mission se trompe souvent d'un chiffre : on corrige sur la
 // fiche d'appel, et la liste doit suivre — sinon on rappelle le mauvais numéro
 await page.keyboard.press("Alt+1");
@@ -202,7 +273,7 @@ verifie(
   ligneCorrigee.replace(/\s+/g, " ").slice(0, 110)
 );
 
-console.log("\n8. Un dentiste ajouté à la main rejoint la liste");
+console.log("\n9. Un dentiste ajouté à la main rejoint la liste");
 // « Ajouter un praticien » ouvre un formulaire vierge, délié de toute fiche :
 // sans lui, taper un nom par-dessus la fiche ouverte la renommerait
 await page.keyboard.press("Alt+1");
@@ -259,7 +330,7 @@ verifie(
   (await page.textContent("aside")).replace(/\s+/g, " ").slice(0, 120)
 );
 
-console.log("\n9. Dentiste Y du scénario C");
+console.log("\n10. Dentiste Y du scénario C");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(250);
 await page.click(`tbody tr:has-text("${A.dernierNom}") button:has-text("Encoder")`);
@@ -311,7 +382,7 @@ await page.screenshot({ path: path.join(SORTIES, "pc-dentiste-y.png") });
 await page.click("button:text-is('Tous') >> nth=0");
 await page.waitForTimeout(250);
 
-console.log("\n10. Copier des lignes Excel depuis la liste");
+console.log("\n11. Copier des lignes Excel depuis la liste");
 await page.keyboard.press("Alt+1");
 await page.waitForTimeout(300);
 await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -418,7 +489,7 @@ verifie(
 await page.fill("input[placeholder^='Chercher']", "");
 await page.waitForTimeout(200);
 
-console.log("\n11. Journée en tableau");
+console.log("\n12. Journée en tableau");
 await page.keyboard.press("Alt+3");
 await page.waitForTimeout(250);
 const appelsEncodes = await page.$$eval("tbody tr", (els) => els.filter((tr) => tr.querySelectorAll("td").length > 1).length);
@@ -436,7 +507,7 @@ verifie("heure de l'appel dans le tableau", /\d{2}:\d{2}/.test(ligneJournee), li
 verifie("date du rendez-vous dans le tableau", ligneJournee.includes("12/11/2026"), ligneJournee.replace(/\s+/g, " ").slice(0, 120));
 await page.screenshot({ path: path.join(SORTIES, "pc-journee.png") });
 
-console.log("\n12. Suivi et données sur deux colonnes");
+console.log("\n13. Suivi et données sur deux colonnes");
 await page.keyboard.press("Alt+4");
 await page.waitForTimeout(250);
 const colonnesSuivi = await page.$eval("main, div.lg\\:grid", () => {
@@ -563,7 +634,7 @@ await page.waitForTimeout(250);
 verifie("zone de dépôt du fichier Excel", await page.isVisible("text=Choisir le fichier Antwoordtabel"));
 await page.screenshot({ path: path.join(SORTIES, "pc-donnees.png") });
 
-console.log("\n13. Aide clavier");
+console.log("\n14. Aide clavier");
 await page.keyboard.press("?");
 await page.waitForTimeout(300);
 verifie("« ? » ouvre les raccourcis", await page.isVisible("text=Raccourcis clavier"));
@@ -571,7 +642,7 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 verifie("Échap referme", !(await page.isVisible("text=Enregistrer et passer au praticien suivant")));
 
-console.log("\n14. Langue de l'interface");
+console.log("\n15. Langue de l'interface");
 const tsvFrancais = await page.inputValue("textarea[readonly]");
 verifie("l'export contient bien les valeurs françaises", tsvFrancais.includes("conventionné") && tsvFrancais.includes("oui"), tsvFrancais.slice(0, 80));
 
@@ -612,7 +683,7 @@ await page.click('aside button[title="Français"]');
 await page.waitForTimeout(300);
 verifie("retour au français", (await page.textContent("aside nav")).includes("Liste"));
 
-console.log("\n15. Aucune erreur JavaScript");
+console.log("\n16. Aucune erreur JavaScript");
 verifie("console propre", erreurs.length === 0, erreurs.join(" | ").slice(0, 300));
 
 await navigateur.close();

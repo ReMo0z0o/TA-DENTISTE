@@ -197,6 +197,7 @@ export default function AppelScreen({
   parent,
   fileAttente = [],
   onOuvrirFiche,
+  navigation,
 }) {
   const t = useT();
   const lib = (cle) => t(COLUMN_BY_KEY[cle].label);
@@ -212,6 +213,36 @@ export default function AppelScreen({
   return (
     <div className="pb-28 lg:pb-0 xl:grid xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start xl:gap-6">
       <div className="min-w-0">
+        {/* feuilleter les fiches une par une, dans l'ordre de la liste */}
+        {navigation && navigation.rang >= 0 && navigation.total > 1 && (
+          <div
+            data-role="navigation-fiches"
+            className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5"
+          >
+            <button
+              onClick={navigation.surPrecedent}
+              disabled={!navigation.precedent}
+              title={navigation.precedent ? navigation.precedent.nom : undefined}
+              data-role="fiche-precedente"
+              className="min-h-[36px] max-w-[45%] truncate rounded-lg px-2.5 text-[13px] text-slate-700 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
+            >
+              ‹ {navigation.precedent ? navigation.precedent.nom : t("Précédent")}
+            </button>
+            <span className="shrink-0 text-[12px] whitespace-nowrap text-slate-500 tabular-nums">
+              {navigation.rang + 1} / {navigation.total}
+            </span>
+            <button
+              onClick={navigation.surSuivant}
+              disabled={!navigation.suivant}
+              title={navigation.suivant ? navigation.suivant.nom : undefined}
+              data-role="fiche-suivante"
+              className="min-h-[36px] max-w-[45%] truncate rounded-lg px-2.5 text-[13px] text-slate-700 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent"
+            >
+              {navigation.suivant ? navigation.suivant.nom : t("Suivant")} ›
+            </button>
+          </div>
+        )}
+
         {!call.dentiste && fileAttente.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-white p-3">
             <div>
