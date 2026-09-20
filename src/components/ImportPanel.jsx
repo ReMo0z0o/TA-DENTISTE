@@ -16,6 +16,9 @@ import { PROVINCES, STATUTS } from "../lib/model.js";
 import { lisCodeDeReprise, ressembleAUnCode } from "../lib/reprise.js";
 import { useT } from "../lib/i18n.js";
 
+/** Choix explicite « pas de statut pour cette liste » dans le groupe de boutons. */
+const SANS_STATUT = "\u2014 vide \u2014";
+
 export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash }) {
   const t = useT();
   const champsOptions = CHAMPS_LISTE.map((c) => ({ value: c.key, label: t(c.label) }));
@@ -27,6 +30,10 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
   // ne doit pas relire le fichier de travers
   const [enTetes, setEnTetes] = useState({ liste: -1, reponses: -1 });
   const [contexte, setContexte] = useState({ province: "", statut: "" });
+  // « laisser vide » est un choix à part entière : tant qu'il n'est pas fait,
+  // l'application signale que la colonne reste à remplir ; une fois fait, elle
+  // se tait et n'invente plus de statut nulle part
+  const [sansStatut, setSansStatut] = useState(false);
   const [texte, setTexte] = useState("");
 
   const rows = source?.feuilles?.[feuilleIndex]?.rows || [];
@@ -44,6 +51,7 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
     setMapping(liste.mapping);
     setEnTetes({ liste: liste.enTete, reponses: reponses.enTete });
     setContexte(contexteDepuisNom(nom, lignes));
+    setSansStatut(false);
   };
 
   const surFichier = async (file) => {
@@ -114,7 +122,7 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
       return;
     }
     if (genre === "reponses") onCalls(resultat);
-    else onProspects(resultat);
+    else onProspects(resultat, contexte.statut);
     setSource(null);
   };
 
@@ -189,14 +197,24 @@ export default function ImportPanel({ onProspects, onCalls, onSauvegarde, flash 
               <Choice
                 label={t("Statut Inami de cette liste")}
                 hint={t("Appliqué à tous les praticiens de cette liste, et déjà rempli à chaque appel. Les praticiens dont le fichier précise le statut gardent le leur.")}
-                options={STATUTS}
-                value={contexte.statut}
-                onChange={(v) => setContexte((c) => ({ ...c, statut: v }))}
+                options={[...STATUTS, SANS_STATUT]}
+                value={sansStatut ? SANS_STATUT : contexte.statut}
+                rendu={(o) => (o === SANS_STATUT ? t("Laisser vide") : t.valeur(o))}
+                onChange={(v) => {
+                  setSansStatut(v === SANS_STATUT);
+                  setContexte((c) => ({ ...c, statut: v === SANS_STATUT ? "" : v }));
+                }}
               />
-              {!contexte.statut && (
-                <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
-                  {t("Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.")}
+              {sansStatut ? (
+                <p className="mb-3 rounded-lg bg-slate-100 px-3 py-2 text-[12.5px] text-slate-600">
+                  {t("Le statut restera vide : tu le choisiras appel par appel.")}
                 </p>
+              ) : (
+                !contexte.statut && (
+                  <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
+                    {t("Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.")}
+                  </p>
+                )
               )}
 
               <Label hint={t("Corrige si une colonne n'a pas été reconnue.")}>{t("Correspondance des colonnes")}</Label>

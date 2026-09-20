@@ -64,19 +64,27 @@ await page.setInputFiles('input[accept*=".xlsx"]', jeu.liste);
 await page.waitForSelector("text=Vérifier avant d'importer");
 verifie("vérification en fenêtre dédiée", await page.isVisible("thead select"));
 
-// le statut Inami de la liste : trois choix en clair, et un avertissement
-// tant qu'aucun n'est fait (c'est une colonne obligatoire du fichier)
+// le statut Inami de la liste : trois choix en clair, « laisser vide » comme
+// quatrième, et un avertissement tant que rien n'est décidé
 const choixStatut = '[role="group"][aria-label="Statut Inami de cette liste"]';
 verifie(
-  "les trois statuts sont proposés au chargement",
+  "les trois statuts et « laisser vide » sont proposés au chargement",
   (await page.$$eval(`${choixStatut} button`, (els) => els.map((e) => e.textContent.trim()))).join(" | ") ===
-    "conventionné | partiellement conventionné | non conventionné",
+    "conventionné | partiellement conventionné | non conventionné | Laisser vide",
   await page.textContent(choixStatut)
 );
-verifie("l'absence de statut est signalée", await page.isVisible("text=Sans statut, cette colonne obligatoire"));
+verifie("l'absence de décision est signalée", await page.isVisible("text=Sans statut, cette colonne obligatoire"));
+
+// ne pas remplir le statut est un choix, pas un oubli : l'avertissement cède
+// la place à ce que l'application fera
+await page.click(`${choixStatut} >> button:text-is("Laisser vide")`);
+await page.waitForTimeout(200);
+verifie("« laisser vide » lève l'avertissement", !(await page.isVisible("text=Sans statut, cette colonne obligatoire")));
+verifie("et annonce ce qui se passera", await page.isVisible("text=Le statut restera vide"));
+
 await page.click(`${choixStatut} >> button:text-is("non conventionné")`);
 await page.waitForTimeout(200);
-verifie("l'avertissement disparaît une fois le statut choisi", !(await page.isVisible("text=Sans statut, cette colonne obligatoire")));
+verifie("choisir un statut reprend la main", !(await page.isVisible("text=Le statut restera vide")));
 
 await page.click(`button:has-text("Importer ${A.praticiens} praticien")`);
 await page.waitForSelector("table");

@@ -346,6 +346,9 @@ const NL = {
     "Wordt op alle beoefenaars van deze lijst toegepast en staat bij elke oproep al ingevuld. Beoefenaars van wie het bestand het statuut vermeldt, behouden het hunne.",
   "Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.":
     "Zonder statuut blijft die verplichte kolom bij elke oproep in te vullen.",
+  "Laisser vide": "Leeg laten",
+  "Le statut restera vide : tu le choisiras appel par appel.":
+    "Het statuut blijft leeg: je kiest het oproep per oproep.",
   "— aucune —": "— geen —",
   "— ignorer —": "— negeren —",
   "Correspondance des colonnes": "Overeenkomst van de kolommen",
@@ -828,6 +831,9 @@ const EN = {
     "Applied to every practitioner in this list, and already filled in on each call. Practitioners whose status the file states keep their own.",
   "Sans statut, cette colonne obligatoire restera à remplir sur chaque appel.":
     "Without a status, that mandatory column stays to be filled in on every call.",
+  "Laisser vide": "Leave blank",
+  "Le statut restera vide : tu le choisiras appel par appel.":
+    "The status will stay blank: you'll pick it call by call.",
   "— aucune —": "— none —",
   "— ignorer —": "— ignore —",
   "Correspondance des colonnes": "Column mapping",

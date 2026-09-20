@@ -354,7 +354,10 @@ export default function App() {
         e.prospects.map((p) => (p.id === complet.prospectId ? ficheSelonAppel(p, complet, suite) : p)),
         nouvelleFiche
       ),
-      reglages: { ...e.reglages, province: complet.province || e.reglages.province, statut: complet.statut || e.reglages.statut },
+      // la province se déduit du code postal et se répète d'une fiche à l'autre ;
+      // le statut, lui, se lit dans le fichier reçu : le reposer sur la fiche
+      // suivante reviendrait à répondre à la place du cabinet
+      reglages: { ...e.reglages, province: complet.province || e.reglages.province },
     }));
     return { ...complet, garde, suite };
   };
@@ -459,11 +462,13 @@ export default function App() {
     flash(t("Appel supprimé."));
   };
 
-  const ajouteProspects = (fiches) => {
+  const ajouteProspects = (fiches, statutParDefaut = "") => {
     majEtat((e) => {
       const connus = new Set(e.prospects.map((p) => `${p.nom}|${phoneKey(p.telephone)}`));
       const nouveaux = fiches.filter((f) => !connus.has(`${f.nom}|${phoneKey(f.telephone)}`));
-      return { prospects: [...e.prospects, ...nouveaux] };
+      // le statut retenu à l'import fait autorité, vide compris : laissé vide,
+      // aucune fiche ne doit hériter de celui d'une liste précédente
+      return { prospects: [...e.prospects, ...nouveaux], reglages: { ...e.reglages, statut: statutParDefaut } };
     });
     flash(t("{n} praticiens lus. Ouvre l'onglet « Liste » : il n'y a plus qu'à appeler.", { n: fiches.length }));
     setOnglet("liste");

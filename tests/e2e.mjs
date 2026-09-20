@@ -69,6 +69,10 @@ const apercu = await page.textContent("button:has-text('Importer')");
 verifie(`${A.praticiens} praticiens détectés`, apercu.includes(`Importer ${A.praticiens} praticien`), apercu || "");
 const colonnes = await page.$$eval("thead select", (els) => els.map((e) => e.value));
 verifie("colonnes reconnues", colonnes.includes("nom") && colonnes.includes("telephone"), colonnes.join(","));
+// cette liste-ci part sans statut : c'est un choix, et il doit tenir
+await page.click('[role="group"][aria-label="Statut Inami de cette liste"] >> button:text-is("Laisser vide")');
+await page.waitForTimeout(200);
+verifie("« laisser vide » annonce ce qui se passera", await page.isVisible("text=Le statut restera vide"));
 await page.click(`button:has-text("Importer ${A.praticiens} praticien")`);
 await page.waitForSelector(`button:has-text("Tous ${A.praticiens}")`);
 verifie("liste chargée", true);
@@ -86,6 +90,11 @@ const heure = await page.inputValue('input[type="time"]');
 verifie("heure de l'appel notée", /^\d{2}:\d{2}$/.test(heure), heure);
 
 console.log("\n3. Encodage d'un rendez-vous");
+verifie(
+  "aucun statut n'a été mis à la place de l'utilisateur",
+  await page.isVisible('[role="group"][aria-label="Statut Inami"]'),
+  await page.textContent("section >> nth=0").then((x) => x.replace(/\s+/g, " ").slice(0, 80))
+);
 await page.click("button:text-is('conventionné')");
 await page.click("h2:has-text('Résultat de l\\'appel') >> xpath=../.. >> button:text-is('oui')");
 await page.fill('input[type="date"] >> nth=1', "2026-11-12");
@@ -102,6 +111,13 @@ verifie(
 await page.click('button:has-text("Enregistrer et passer au suivant")');
 await page.waitForSelector("text=/Au suivant/");
 verifie("appel enregistré et fiche suivante ouverte", true);
+// le statut du cabinet précédent ne doit pas se reposer tout seul sur le
+// suivant : il se lit dans le fichier reçu, il ne se devine pas
+verifie(
+  "le statut n'est pas repris de l'appel précédent",
+  await page.isVisible('[role="group"][aria-label="Statut Inami"]'),
+  await page.textContent("section >> nth=0").then((x) => x.replace(/\s+/g, " ").slice(0, 80))
+);
 
 console.log("\n4. Historique avec l'heure");
 await page.click('[data-role="onglets-mobile"] >> text=Journée');
